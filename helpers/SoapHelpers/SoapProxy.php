@@ -21,7 +21,7 @@ class SoapProxy extends \SoapClient
     {
         $this->tpiConfig = $tpiConfig;
     }
-    
+
     public function __call($methodName, $params)
     {
         $postCurlParams = $params[0];
