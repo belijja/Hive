@@ -1,0 +1,28 @@
+[DATABASE]
+host
+database
+user =
+pass =
+
+[THIRD PARTY SERVICE PARTNERS]
+pw[password] =
+pw[providerId] =
+isibet[password] =
+isibet[providerId] =
+vintagames[password] =
+vintagames[providerId] =
+
+[WSDL]
+wsdlCacheDir =
+
+[ISBETS]
+localProviderId =
+apiAccount =
+apiPassword =
+apiUri =
+apiConnectionTimeout =
+
+[SERVER]
+address =
+port =
+nePort =
