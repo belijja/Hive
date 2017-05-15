@@ -114,34 +114,35 @@ class Legacy extends AbstractPartners
                 return $returnData;
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;
-            $params = array();
+            $params = [];
             $params['providerId'] = $this->tpiConfigs['providerId'];
             $params['userId'] = $userId;
             $params['skinId'] = $this->tpiConfigs['partnerId'];
-            if(isset($user->agentId) && $user->agentId != 0) {
+            if (isset($user->agentId) && $user->agentId != 0) {
                 $query = $this->db->prepare("SELECT * FROM provider_affil_mapping WHERE provider_id = :providerId AND provider_affilid = :agentId");
                 $result = $query->execute([
                     ':providerId' => $this->tpiConfigs['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
-                if($query->rowCount() != 1) {
+                if ($query->rowCount() != 1) {
                     /*$agentName = $this->db->quote($user->agentName);*/
                     $query = $this->db->prepare("INSERT INTO affiliates (name) VALUES (:agentName)");
-                    if($query->execute([
+                    if ($query->execute([
                         ':agentName' => $user->agentName
-                    ])) {
+                    ])
+                    ) {
                         $affiliateId = $this->db->lastInsertId();
                         $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
-                            ':providerId' => $this->tpiConfigs['providerId'],
-                            ':agentId'    => $user->agentId,
-                            ':affiliateId'=> $affiliateId
+                            ':providerId'  => $this->tpiConfigs['providerId'],
+                            ':agentId'     => $user->agentId,
+                            ':affiliateId' => $affiliateId
                         ]);
                     }
                 }
                 $params['affiliateId'] = $user->agentId;
             }
-            if(!$needUpdate) {
+            if (!$needUpdate) {
                 $params['active'] = 1;
                 $params['temporaryNick'] = $user->screenName != '' ? 0 : 1;
                 $params['username'] = $user->screenName != '' ? $user->screenName : 'player' . mt_rand(1000000, mt_getrandmax());
@@ -155,25 +156,30 @@ class Legacy extends AbstractPartners
             $params['lastName'] = $user->lastname;
             $position = strpos($user->country, ':');
             $params['country'] = $position !== false ? substr($user->country, 0, $position) : $user->country;
-            if($position !== false) {
+            if ($position !== false) {
                 $params['state'] = substr($user->country, $position + 1);
             }
             if (isset($user->dateOfBirth)) {
                 $req['dateOfBirth'] = substr($user->dateOfBirth, 0, 10);
             }
             $params['isFirstLogin'] = $isFirstLogin ? 1 : 0;
-            $updateOrInsert = $this->recursiveCall($needUpdate, $params);
+            return $this->recursiveCall($needUpdate, $params, $returnData);
         }
+        return $returnData;
     }
 
-    private function recursiveCall(bool $needUpdate, array $params)
+    private function recursiveCall(bool $needUpdate, array $params, array $returnData): array
     {
         $response = $this->serverManager->callExternalMethod($needUpdate ? 'UpdatePokerPlayer' : 'InsertPokerRegistration', $params);
-        if(!$response || $response['status'] != 1) {
-            if(!$needUpdate && $params['temporaryNick'] == 0 && $response['errorCode'] == 3) {
+        if (!$response || $response['status'] != 1) {
+            if (!$needUpdate && $params['temporaryNick'] == 0 && $response['errorCode'] == 3) {
                 $params['temporaryNick'] = 1;
+                $params['username'] = "player" . mt_rand(1000000, mt_getrandmax());
+                $this->recursiveCall($needUpdate, $params, $returnData);
             }
+            return $needUpdate ? $returnData : $response;
         }
+        return $response;
     }
 
 }
