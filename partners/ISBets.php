@@ -146,10 +146,7 @@ class ISBets extends AbstractPartners
             }*/
             $commit = false;
             $this->db->beginTransaction();
-            $query = $this->db->prepare("INSERT INTO affiliates
-                                                 (name, email, phone, city, street, country, zip)
-                                                 VALUES
-                                                 (:username, :email, :phone, :city, :address, :country, :zip)");
+            $query = $this->db->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
             $user = $ISBetsUserInfo->GetUserInfoResult->_UserInfo;//making variable name shorter
             if ($query->execute([
                     ':username' => $user->Username,

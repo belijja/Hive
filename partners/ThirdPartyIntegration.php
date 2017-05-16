@@ -13,17 +13,29 @@ use Configs\ThirdPartyIntegrationCodes;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 
-class Legacy extends AbstractPartners
+/**
+ * Class ThirdPartyIntegration
+ * @package Partners
+ */
+class ThirdPartyIntegration extends AbstractPartners
 {
 
     private $tpiConfigs;
 
+    /**
+     * ThirdPartyIntegration constructor.
+     * @param ThirdPartyIntegrationCodes $tpiConfigs
+     */
     public function __construct(ThirdPartyIntegrationCodes $tpiConfigs)
     {
         $this->tpiConfigs = $tpiConfigs;
         parent::__construct(new ServerManager(), new ThirdPartyIntegrationSoapClient($this->tpiConfigs));
     }
 
+    /**
+     * @param array $arrayOfParams
+     * @return array
+     */
     public function checkAndRegisterUser(array $arrayOfParams): array
     {
         list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
@@ -168,6 +180,12 @@ class Legacy extends AbstractPartners
         return $returnData;
     }
 
+    /**
+     * @param bool $needUpdate
+     * @param array $params
+     * @param array $returnData
+     * @return array
+     */
     private function recursiveCall(bool $needUpdate, array $params, array $returnData): array
     {
         $response = $this->serverManager->callExternalMethod($needUpdate ? 'UpdatePokerPlayer' : 'InsertPokerRegistration', $params);
