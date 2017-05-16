@@ -22,15 +22,17 @@ use Models\ServiceModels\WalletedGameURL;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
-use Helpers\SoapHelpers\ISBetsSoapClient;
 //partners
 use Partners\ISBets;
-use Partners\Legacy;
+use Partners\ThirdPartyIntegration;
 use Partners\AbstractPartners;
 //configs
 use Configs\CurrencyCodes;
 use Configs\ISBetsCodes;
 use Configs\ThirdPartyIntegrationCodes;
+//users
+use Users\IUsers;
+use Users\ServiceUsers;
 
 /**
  * Class ThirdPartyService
@@ -40,21 +42,24 @@ class ThirdPartyService
     public $soapManager;
     public $paramManager;
     public $ISBets;
-    public $legacy;
+    public $thirdPartyIntegration;
+    public $serviceUsers;
 
     /**
      * ThirdPartyService constructor.
      * @param SoapManager $soapManager
      * @param ParamManager $paramManager
      * @param AbstractPartners $ISBets
-     * @param AbstractPartners $legacy
+     * @param AbstractPartners $thirdPartyIntegration
+     * @param IUsers $serviceUsers
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $legacy)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, IUsers $serviceUsers)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
         $this->ISBets = $ISBets;
-        $this->legacy = $legacy;
+        $this->thirdPartyIntegration = $thirdPartyIntegration;
+        $this->serviceUsers = $serviceUsers;
     }
 
     /**
@@ -91,27 +96,41 @@ class ThirdPartyService
         $response = new WalletedGameURL();
         $cents = number_format($amount * 100, 0, '.', '');
         if ($cents === false || $cents < 0) {
-            $response->resultCode = 0;
+            $response->resultCode = 0;//unspecified error
             return $response;
         }
         $is_demo = ($option & 2) && $gameId != 0;
+        $providerIdFromConfigFile = (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {
-            if ((int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'] === 3) {
-                $user = $this->ISBets->checkAndRegisterUser([
+            if ($providerIdFromConfigFile === 2) {
+                $ISBetsUser = $this->ISBets->checkAndRegisterUser([
                     $userId,
                     $skinId
                 ]);
-                if ($user['status'] == false || $user['status'] != 1) {
-                    $response->resultCode = -3;
+                if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
+                    $response->resultCode = -3;//user not found
                     return $response;
                 }
-            } else if (!$this->legacy->checkAndRegisterUser([
-                $userId,
-                $skinId,
-                (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId']
-            ])
+            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([
+                    $userId,
+                    $skinId,
+                    $providerIdFromConfigFile
+                ])['status'] == false
             ) {
-
+                $response->resultCode = -3;//user not found
+                return $response;
+            }
+            $thirdPartyServiceUser = $this->serviceUsers->getUserData([
+                $providerIdFromConfigFile,
+                $skinId,
+                $userId
+            ]);
+            if ($thirdPartyServiceUser['status'] == false) {
+                $response->resultCode = -3;//user not found
+                return $response;
+            } else if ($thirdPartyServiceUser['rights'] & 0x08000000) {
+                $response->resultCode = -4;//player blocked for API
+                return $response;
             }
         }
 
@@ -132,7 +151,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBets(new ISBetsCodes(), new CurrencyCodes()), new Legacy(new ThirdPartyIntegrationCodes()));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBets(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegration(new ThirdPartyIntegrationCodes()), new ServiceUsers());
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
