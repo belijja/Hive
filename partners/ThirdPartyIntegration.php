@@ -45,7 +45,7 @@ class ThirdPartyIntegration extends AbstractPartners
                 ':providerId'     => $providerId,
                 ':providerSkinId' => $skinId
             ]) || $query->rowCount() == 0
-        ) {//if query fail
+        ) {//if query fails or there is no returned rows from db
             $returnData['status'] = false;
             return $returnData;
         } else {
@@ -70,7 +70,7 @@ class ThirdPartyIntegration extends AbstractPartners
      */
     public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
     {
-        $this->tpiConfigs = $this->tpiConfigs->getTpiConfigs($pokerSkinId);
+        $this->tpiConfigs = $this->tpiConfigs->getTpiConfigs($pokerSkinId);//making variable shorter
         $needUpdate = false;
         $isFirstLogin = 1;
         $returnData = [];
@@ -125,7 +125,7 @@ class ThirdPartyIntegration extends AbstractPartners
                 $returnData['status'] = false;
                 return $returnData;
             }*/
-            $user = $legacyUserInfo->UserGetInfoResult;
+            $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];
             $params['providerId'] = $this->tpiConfigs['providerId'];
             $params['userId'] = $userId;

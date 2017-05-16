@@ -102,18 +102,30 @@ class ThirdPartyService
         $is_demo = ($option & 2) && $gameId != 0;
         $providerIdFromConfigFile = (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {
-            if ($providerIdFromConfigFile === 3) {
-                $user = $this->ISBets->checkAndRegisterUser([$userId, $skinId]);
-                if ($user['status'] == false || $user['status'] != 1) {
+            if ($providerIdFromConfigFile === 2) {
+                $ISBetsUser = $this->ISBets->checkAndRegisterUser([
+                    $userId,
+                    $skinId
+                ]);
+                if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
                     $response->resultCode = -3;//user not found
                     return $response;
                 }
-            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([$userId, $skinId, $providerIdFromConfigFile])['status'] == false) {
+            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([
+                    $userId,
+                    $skinId,
+                    $providerIdFromConfigFile
+                ])['status'] == false
+            ) {
                 $response->resultCode = -3;//user not found
                 return $response;
             }
-            $thirdPartyServiceUser = $this->serviceUsers->getUserData([$providerIdFromConfigFile, $skinId, $userId]);
-            if($thirdPartyServiceUser['status'] == false) {
+            $thirdPartyServiceUser = $this->serviceUsers->getUserData([
+                $providerIdFromConfigFile,
+                $skinId,
+                $userId
+            ]);
+            if ($thirdPartyServiceUser['status'] == false) {
                 $response->resultCode = -3;//user not found
                 return $response;
             } else if ($thirdPartyServiceUser['rights'] & 0x08000000) {

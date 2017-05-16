@@ -19,5 +19,5 @@ interface IUsers
      * @param array $params
      * @return array
      */
-    public function getUserData(array $params) : array ;
+    public function getUserData(array $params): array;
 }
