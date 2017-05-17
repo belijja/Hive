@@ -15,7 +15,8 @@ namespace Helpers\ConfigHelpers;
  */
 class ConfigManager
 {
-    private static $db;
+    private static $firstDb;
+    private static $secondDb;
     private static $thirdPartyServicePartners;
     private static $wsdl;
     private static $ISBets;
@@ -30,7 +31,8 @@ class ConfigManager
             $error = error_get_last();
             throw new \SoapFault('CONFIG_ERROR', "Error occurred while parsing configuration file: " . $error['message'] . " in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
-        self::$db = $config['DATABASE'];
+        self::$firstDb = $config['DATABASE 1'];
+        self::$secondDb = $config['DATABASE 2'];
         self::$thirdPartyServicePartners = $config['THIRD PARTY SERVICE PARTNERS'];
         self::$wsdl = $config['WSDL'];
         self::$ISBets = $config['ISBETS'];
@@ -159,39 +161,43 @@ class ConfigManager
     }
 
     /**
+     * @param bool $first
      * @return string
      */
-    public static function getDbHost(): string
+    public static function getDbHost(bool $first): string
     {
         self::parseConfigFile();
-        return self::$db['host'];
+        return $first ? self::$firstDb['host'] : self::$secondDb['host'];
     }
 
     /**
+     * @param bool $first
      * @return string
      */
-    public static function getDbDatabase(): string
+    public static function getDbDatabase(bool $first): string
     {
         self::parseConfigFile();
-        return self::$db['database'];
+        return $first ? self::$firstDb['database'] : self::$secondDb['database'];
     }
 
     /**
+     * @param bool $first
      * @return string
      */
-    public static function getDbUser(): string
+    public static function getDbUser(bool $first): string
     {
         self::parseConfigFile();
-        return self::$db['user'];
+        return $first ? self::$firstDb['user'] : self::$secondDb['user'];
     }
 
     /**
+     * @param bool $first
      * @return string
      */
-    public static function getDbPass(): string
+    public static function getDbPass(bool $first): string
     {
         self::parseConfigFile();
-        return self::$db['pass'];
+        return $first ? self::$firstDb['pass'] : self::$secondDb['pass'];
     }
 }
 

@@ -1,6 +1,12 @@
-[DATABASE]
-host
-database
+[DATABASE 1]
+host =
+database =
+user =
+pass =
+
+[DATABASE 2]
+host =
+database =
 user =
 pass =
 

@@ -24,8 +24,8 @@ class Db
     private function __construct()
     {
         try {
-            $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDbHost() . ";dbname=" . ConfigManager::getDbDatabase() . ";charset=utf8", ConfigManager::getDbUser(), ConfigManager::getDbPass());
-        } catch (\Exception $ex) {
+            $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDbHost(true) . ";dbname=" . ConfigManager::getDbDatabase(true) . ";charset=utf8", ConfigManager::getDbUser(true), ConfigManager::getDbPass(true));
+        } catch (\PDOException $ex) {
             echo $ex->getMessage();
         }
     }
