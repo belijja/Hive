@@ -22,6 +22,7 @@ use Models\ServiceModels\WalletedGameURL;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
+use Helpers\SessionHelpers\SessionManager;
 //partners
 use Partners\ISBets;
 use Partners\ThirdPartyIntegration;
@@ -43,6 +44,7 @@ class ThirdPartyService
     public $ISBets;
     public $thirdPartyIntegration;
     public $serviceUsers;
+    private $sessionManager;
 
     /**
      * ThirdPartyService constructor.
@@ -51,14 +53,16 @@ class ThirdPartyService
      * @param AbstractPartners $ISBets
      * @param AbstractPartners $thirdPartyIntegration
      * @param ServiceUsers $serviceUsers
+     * @param SessionManager $sessionManager
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
         $this->ISBets = $ISBets;
         $this->thirdPartyIntegration = $thirdPartyIntegration;
         $this->serviceUsers = $serviceUsers;
+        $this->sessionManager = $sessionManager;
     }
 
     /**
@@ -138,6 +142,12 @@ class ThirdPartyService
             $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
             $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
         }
+        $sessionId = $this->sessionManager->startSessionAndGetSessionId();
+        if ($gameId != 0) {
+
+        }
+
+
 
         $response->resultCode = 3233;
         $response->url = "httkedlfsdkgsgjdsgkjsdkgskjsd";
@@ -156,7 +166,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBets(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegration(new ThirdPartyIntegrationCodes()), new ServiceUsers());
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBets(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegration(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager());
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
