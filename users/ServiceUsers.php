@@ -15,7 +15,7 @@ use Helpers\ConfigHelpers\Db;
  * Class ServiceUsers
  * @package Users
  */
-class ServiceUsers implements IUsers
+class ServiceUsers
 {
     /**
      * @param array $params
@@ -46,6 +46,29 @@ class ServiceUsers implements IUsers
                 ':userId'     => $userId
             ]) || $query->rowCount() != 1
         ) {
+            $returnData['status'] = false;
+        } else {
+            $returnData = $query->fetch(\PDO::FETCH_ASSOC);
+        }
+        return $returnData;
+    }
+
+    /**
+     * @param int $providerId
+     * @param int $skinId
+     * @return array
+     */
+    public function getPokerSkinId(int $providerId, int $skinId) : array
+    {
+        $returnData = [];
+        $query = Db::getInstance()->pdo->prepare("SELECT poker_skinid 
+                                                          FROM provider_skin_mapping 
+                                                          WHERE provider_id = :providerId 
+                                                          AND provider_skinid = :skinId");
+        if(!$query->execute([
+            ':providerId' => $providerId,
+            'skinId' => $skinId
+        ]) || $query->rowCount() != 1) {
             $returnData['status'] = false;
         } else {
             $returnData = $query->fetch(\PDO::FETCH_ASSOC);

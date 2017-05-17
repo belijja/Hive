@@ -31,7 +31,6 @@ use Configs\CurrencyCodes;
 use Configs\ISBetsCodes;
 use Configs\ThirdPartyIntegrationCodes;
 //users
-use Users\IUsers;
 use Users\ServiceUsers;
 
 /**
@@ -51,9 +50,9 @@ class ThirdPartyService
      * @param ParamManager $paramManager
      * @param AbstractPartners $ISBets
      * @param AbstractPartners $thirdPartyIntegration
-     * @param IUsers $serviceUsers
+     * @param ServiceUsers $serviceUsers
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, IUsers $serviceUsers)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
@@ -101,7 +100,7 @@ class ThirdPartyService
         }
         $is_demo = ($option & 2) && $gameId != 0;
         $providerIdFromConfigFile = (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
-        if (!$is_demo) {
+        if ($is_demo) {
             if ($providerIdFromConfigFile === 2) {
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
                     $userId,
@@ -132,6 +131,12 @@ class ThirdPartyService
                 $response->resultCode = -4;//player blocked for API
                 return $response;
             }
+        } else {
+            $thirdPartyServiceUser = [];
+            $thirdPartyServiceUser['userId'] = -1;
+            $thirdPartyServiceUser['currency'] = 'EUR';
+            $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
+            $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
         }
 
         $response->resultCode = 3233;
