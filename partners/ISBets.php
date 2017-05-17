@@ -134,7 +134,10 @@ class ISBets extends AbstractPartners
      */
     private function checkAndAddAffiliate(int $skinId, int $fatherId, \SoapClient $soapClient = null)
     {
-        $query = $this->db->prepare("SELECT poker_affilid FROM provider_affil_mapping WHERE provider_affilid = :fatherId AND provider_id = :ISBetsProviderId");
+        $query = $this->db->prepare("SELECT poker_affilid 
+                                             FROM provider_affil_mapping 
+                                             WHERE provider_affilid = :fatherId 
+                                             AND provider_id = :ISBetsProviderId");
         if (!$query->execute([
                 ':fatherId'         => $fatherId,
                 ':ISBetsProviderId' => ConfigManager::getISBetsProviderId()
@@ -146,7 +149,8 @@ class ISBets extends AbstractPartners
             }*/
             $commit = false;
             $this->db->beginTransaction();
-            $query = $this->db->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
+            $query = $this->db->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
+                                                 VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
             $user = $ISBetsUserInfo->GetUserInfoResult->_UserInfo;//making variable name shorter
             if ($query->execute([
                     ':username' => $user->Username,
@@ -159,10 +163,8 @@ class ISBets extends AbstractPartners
                 ]) && $query->rowCount() > 0
             ) {
                 $pokerAffiliateId = $this->db->lastInsertId();
-                $query = $this->db->prepare("INSERT INTO provider_affil_mapping
-                                                     (provider_id, provider_affilid, poker_affilid)
-                                                     VALUES
-                                                     (:providerId, :providerAffiliateId, :pokerAffiliateId)");
+                $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid)
+                                                     VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
                     ':providerId'          => ConfigManager::getISBetsProviderId(),
                     ':providerAffiliateId' => $fatherId,

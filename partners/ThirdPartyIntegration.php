@@ -40,7 +40,10 @@ class ThirdPartyIntegration extends AbstractPartners
     {
         list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
         $returnData = [];
-        $query = $this->db->prepare("SELECT poker_skinid FROM provider_skin_mapping WHERE provider_id = :providerId AND provider_skinid = :providerSkinId");
+        $query = $this->db->prepare("SELECT poker_skinid 
+                                             FROM provider_skin_mapping 
+                                             WHERE provider_id = :providerId 
+                                             AND provider_skinid = :providerSkinId");
         if (!$query->execute([
                 ':providerId'     => $providerId,
                 ':providerSkinId' => $skinId
@@ -76,7 +79,12 @@ class ThirdPartyIntegration extends AbstractPartners
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
             $this->db->quote($userDate);
-            $query = $this->db->prepare("SELECT ud.updatetime < :userDate, c.user_id, (ud.logintime <= ud.acttime) AS isFirst FROM casino_ids c JOIN udata ud ON c.user_id = ud.uid WHERE c.provider_id = :providerId AND c.casino_id = :userId AND c.skin_id = :partnerId");
+            $query = $this->db->prepare("SELECT ud.updatetime < :userDate, c.user_id, (ud.logintime <= ud.acttime) AS isFirst 
+                                                 FROM casino_ids c 
+                                                 JOIN udata ud ON c.user_id = ud.uid 
+                                                 WHERE c.provider_id = :providerId 
+                                                 AND c.casino_id = :userId 
+                                                 AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
                 ':providerId' => $this->tpiConfigs['providerId'],
@@ -95,7 +103,12 @@ class ThirdPartyIntegration extends AbstractPartners
                 ];
             }
         } else {
-            $query = $this->db->prepare("SELECT c.user_id, (ud.logintime <= ud.acttime) AS isFirst FROM casino_ids c JOIN udata ud ON c.user_id = ud.uid WHERE c.provider_id = :providerId AND c.casino_id = :userId AND c.skin_id = :partnerId");
+            $query = $this->db->prepare("SELECT c.user_id, (ud.logintime <= ud.acttime) AS isFirst 
+                                                 FROM casino_ids c 
+                                                 JOIN udata ud ON c.user_id = ud.uid 
+                                                 WHERE c.provider_id = :providerId 
+                                                 AND c.casino_id = :userId 
+                                                 AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
                 ':providerId' => $this->tpiConfigs['providerId'],
@@ -131,20 +144,25 @@ class ThirdPartyIntegration extends AbstractPartners
             $params['userId'] = $userId;
             $params['skinId'] = $this->tpiConfigs['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
-                $query = $this->db->prepare("SELECT * FROM provider_affil_mapping WHERE provider_id = :providerId AND provider_affilid = :agentId");
+                $query = $this->db->prepare("SELECT * 
+                                                     FROM provider_affil_mapping 
+                                                     WHERE provider_id = :providerId 
+                                                     AND provider_affilid = :agentId");
                 $result = $query->execute([
                     ':providerId' => $this->tpiConfigs['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
                     /*$agentName = $this->db->quote($user->agentName);*/
-                    $query = $this->db->prepare("INSERT INTO affiliates (name) VALUES (:agentName)");
+                    $query = $this->db->prepare("INSERT INTO affiliates (name) 
+                                                         VALUES (:agentName)");
                     if ($query->execute([
                         ':agentName' => $user->agentName
                     ])
                     ) {
                         $affiliateId = $this->db->lastInsertId();
-                        $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) VALUES (:providerId, :agentId, :affiliateId)");
+                        $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                                                             VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
                             ':providerId'  => $this->tpiConfigs['providerId'],
                             ':agentId'     => $user->agentId,
