@@ -46,7 +46,10 @@ class ISBets extends AbstractPartners
         list($userId, $skinId, $soapClient) = $arrayOfParams;
         $returnData = [];//initializing return array variable
         $userDetails = null;//initializing variable for fetching user from db
-        $query = $this->db->prepare("SELECT c.extern_username, datediff(now(), ud.updatetime) AS updatediff, (ud.logintime <= ud.acttime) AS isFirst, u.*                                FROM users u 
+        $query = $this->db->prepare("SELECT c.extern_username, 
+                                             datediff(now(), ud.updatetime) AS updatediff, 
+                                             (ud.logintime <= ud.acttime) AS isFirst, u.* 
+                                             FROM users u 
                                              JOIN casino_ids c ON u.userid = c.user_id 
                                              JOIN udata ud ON u.userid = ud.uid 
                                              WHERE c.provider_id = :ISBetsProviderId 
@@ -163,7 +166,7 @@ class ISBets extends AbstractPartners
                 ]) && $query->rowCount() > 0
             ) {
                 $pokerAffiliateId = $this->db->lastInsertId();
-                $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid)
+                $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
                     ':providerId'          => ConfigManager::getISBetsProviderId(),

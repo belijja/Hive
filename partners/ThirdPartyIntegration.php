@@ -79,7 +79,8 @@ class ThirdPartyIntegration extends AbstractPartners
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
             $this->db->quote($userDate);
-            $query = $this->db->prepare("SELECT ud.updatetime < :userDate, c.user_id, (ud.logintime <= ud.acttime) AS isFirst 
+            $query = $this->db->prepare("SELECT ud.updatetime < :userDate, c.user_id, 
+                                                 (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
                                                  WHERE c.provider_id = :providerId 
@@ -103,7 +104,8 @@ class ThirdPartyIntegration extends AbstractPartners
                 ];
             }
         } else {
-            $query = $this->db->prepare("SELECT c.user_id, (ud.logintime <= ud.acttime) AS isFirst 
+            $query = $this->db->prepare("SELECT c.user_id, 
+                                                 (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
                                                  WHERE c.provider_id = :providerId 
