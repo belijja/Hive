@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Partners;
 
+use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\ISoapClient;
@@ -27,7 +28,7 @@ abstract class AbstractPartners
     public function __construct(ServerManager $serverManager, ISoapClient $soapClient)
     {
         $this->serverManager = $serverManager;
-        $this->db = Db::getInstance()->pdo;
+        $this->db = Db::getInstance(ConfigManager::getDbDatabase(true))[ConfigManager::getDbDatabase(true)];
         $this->soapClient = $soapClient;
     }
 

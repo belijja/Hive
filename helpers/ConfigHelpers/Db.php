@@ -15,19 +15,31 @@ namespace Helpers\ConfigHelpers;
  */
 class Db
 {
-    private static $instance = null;
-    public $pdo;
+    public static $dbTypes = [];
 
     /**
      * Db constructor.
+     * @param $db
      */
-    private function __construct()
+    private function __construct($db)
     {
-        try {
-            $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDbHost(true) . ";dbname=" . ConfigManager::getDbDatabase(true) . ";charset=utf8", ConfigManager::getDbUser(true), ConfigManager::getDbPass(true));
-        } catch (\PDOException $ex) {
-            echo $ex->getMessage();
+        switch ($db) {
+            case ConfigManager::getDbDatabase(true):
+                try {
+                    self::$dbTypes[$db] = new \PDO("mysql:host=" . ConfigManager::getDbHost(true) . ";dbname=" . ConfigManager::getDbDatabase(true) . ";charset=utf8", ConfigManager::getDbUser(true), ConfigManager::getDbPass(true));
+                } catch (\PDOException $ex) {
+                    echo $ex->getMessage();
+                }
+            break;
+            case ConfigManager::getDbDatabase(false):
+                try {
+                    self::$dbTypes[$db] = new \PDO("mysql:host=" . ConfigManager::getDbHost(false) . ";dbname=" . ConfigManager::getDbDatabase(false) . ";charset=utf8", ConfigManager::getDbUser(false), ConfigManager::getDbPass(false));
+                } catch (\PDOException $ex) {
+                    echo $ex->getMessage();
+                }
+            break;
         }
+
     }
 
     /**
@@ -39,15 +51,15 @@ class Db
     }
 
     /**
+     * @param $db
      * @return Db
      */
-    public static function getInstance(): Db
+    public static function getInstance($db) : self
     {
-        if (!self::$instance) {
-            self::$instance = new Db();
-            return self::$instance;
-        } else {
-            return self::$instance;
+        if (!array_key_exists($db, self::$dbTypes)) {
+            self::$dbTypes[$db] = new self($db);
         }
+        return self::$dbTypes[$db];
+
     }
 }
