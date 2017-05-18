@@ -108,7 +108,8 @@ class ThirdPartyService
             if ($providerIdFromConfigFile === 2) {
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
                     $userId,
-                    $skinId
+                    $skinId,
+                    null
                 ]);
                 if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
                     $response->resultCode = -3;//user not found
@@ -117,7 +118,8 @@ class ThirdPartyService
             } else if ($this->thirdPartyIntegration->checkAndRegisterUser([
                     $userId,
                     $skinId,
-                    $providerIdFromConfigFile
+                    $providerIdFromConfigFile,
+                    null
                 ])['status'] == false
             ) {
                 $response->resultCode = -3;//user not found
@@ -146,8 +148,6 @@ class ThirdPartyService
         if ($gameId != 0) {
 
         }
-
-
 
         $response->resultCode = 3233;
         $response->url = "httkedlfsdkgsgjdsgkjsdkgskjsd";

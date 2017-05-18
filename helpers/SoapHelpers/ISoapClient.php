@@ -14,10 +14,10 @@ interface ISoapClient
     /**
      * @param int $userId
      * @param int $skinId
-     * @param \SoapClient|null $soapClient
+     * @param \SoapClient $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
+    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient): /*array*/
     \stdClass;
 
 }

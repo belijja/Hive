@@ -20,7 +20,7 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
         $this->tpiConfigs = $tpiConfigs;
     }
 
-    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null): /*array*/
+    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient): /*array*/
     \stdClass
     {
         $response = new \stdClass();

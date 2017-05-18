@@ -67,11 +67,11 @@ class ThirdPartyIntegration extends AbstractPartners
     /**
      * @param int $userId
      * @param int $pokerSkinId
-     * @param \SoapClient|null $soapClient
+     * @param \SoapClient $soapClient
      * @param string|null $userDate
      * @return array
      */
-    public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
+    public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient, string $userDate = null): array
     {
         $this->tpiConfigs = $this->tpiConfigs->getTpiConfigs($pokerSkinId);//making variable shorter
         $needUpdate = false;

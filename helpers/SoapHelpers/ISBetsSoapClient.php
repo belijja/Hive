@@ -13,7 +13,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 
 class ISBetsSoapClient implements ISoapClient
 {
-    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
+    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient): /*array*/
     \stdClass
     {
         $response = new \stdClass();
