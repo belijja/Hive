@@ -14,16 +14,16 @@ use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 
 /**
- * Class ThirdPartyIntegration
+ * Class ThirdPartyIntegrationPartners
  * @package Partners
  */
-class ThirdPartyIntegration extends AbstractPartners
+class ThirdPartyIntegrationPartners extends AbstractPartners
 {
 
     private $tpiConfigs;
 
     /**
-     * ThirdPartyIntegration constructor.
+     * ThirdPartyIntegrationPartners constructor.
      * @param ThirdPartyIntegrationCodes $tpiConfigs
      */
     public function __construct(ThirdPartyIntegrationCodes $tpiConfigs)
@@ -38,7 +38,7 @@ class ThirdPartyIntegration extends AbstractPartners
      */
     public function checkAndRegisterUser(array $arrayOfParams): array
     {
-        list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
+        @list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
         $returnData = [];
         $query = $this->db->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
@@ -47,12 +47,12 @@ class ThirdPartyIntegration extends AbstractPartners
         if (!$query->execute([
                 ':providerId'     => $providerId,
                 ':providerSkinId' => $skinId
-            ]) || $query->rowCount() == 0
+            ]) || $query->rowCount() != 1
         ) {//if query fails or there is no returned rows from db
             $returnData['status'] = false;
             return $returnData;
         } else {
-            $result = $query->fetchObject();
+            $result = $query->fetch(\PDO::FETCH_OBJ);
             $userStatus = $this->checkAndRegisterThirdPartyIntegrationUser($userId, (int)$result->poker_skinid, $soapClient);
             if ($userStatus['status'] == false) {
                 $returnData['status'] = false;
@@ -67,19 +67,18 @@ class ThirdPartyIntegration extends AbstractPartners
     /**
      * @param int $userId
      * @param int $pokerSkinId
-     * @param \SoapClient $soapClient
+     * @param \SoapClient|null $soapClient
      * @param string|null $userDate
      * @return array
      */
-    public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient, string $userDate = null): array
+    public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
     {
         $this->tpiConfigs = $this->tpiConfigs->getTpiConfigs($pokerSkinId);//making variable shorter
         $needUpdate = false;
         $isFirstLogin = 1;
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
-            $this->db->quote($userDate);
-            $query = $this->db->prepare("SELECT ud.updatetime < :userDate, c.user_id, 
+            $query = $this->db->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
@@ -95,12 +94,12 @@ class ThirdPartyIntegration extends AbstractPartners
                 //only for com
             ]);
             if ($result && $query->rowCount() == 1) {
-                $result = $query->fetchAll();
-                $isFirstLogin = $result[2] ? 1 : 0;
-                $needUpdate = $result[0] || $isFirstLogin;
+                $result = $query->fetch(\PDO::FETCH_OBJ);
+                $isFirstLogin = $result->isFirst ? 1 : 0;
+                $needUpdate = $result->isUpdated || $isFirstLogin;
                 $returnData = [
                     'status'   => 1,
-                    'poker_id' => $result[1]
+                    'poker_id' => $result->user_id
                 ];
             }
         } else {
@@ -120,14 +119,12 @@ class ThirdPartyIntegration extends AbstractPartners
                 //only for com
             ]);
         }
-        if (/*!*/
-        $result
-        ) {
+        if (!$result) {
             $returnData['status'] = false;
             return $returnData;
         }
         if ($query->rowCount() > 0 && $returnData['status'] === true) {
-            $result = $query->fetchObject();
+            $result = $query->fetch(\PDO::FETCH_OBJ);
             $isFirstLogin = $result->isFirst ? 1 : 0;
             $returnData = [
                 'status'   => 1,
@@ -150,12 +147,11 @@ class ThirdPartyIntegration extends AbstractPartners
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
-                $result = $query->execute([
+                $query->execute([
                     ':providerId' => $this->tpiConfigs['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
-                    /*$agentName = $this->db->quote($user->agentName);*/
                     $query = $this->db->prepare("INSERT INTO affiliates (name) 
                                                          VALUES (:agentName)");
                     if ($query->execute([

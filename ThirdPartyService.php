@@ -24,8 +24,8 @@ use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
 //partners
-use Partners\ISBets;
-use Partners\ThirdPartyIntegration;
+use Partners\ISBetsPartners;
+use Partners\ThirdPartyIntegrationPartners;
 use Partners\AbstractPartners;
 //configs
 use Configs\CurrencyCodes;
@@ -97,8 +97,8 @@ class ThirdPartyService
     public function GetWalletedGameURL(int $skinId, int $userId, int $gameId, float $amount, string $language, int $option, string $ip = null, int $campaignId = null, int $platform = null): IServiceModels
     {
         $response = new WalletedGameURL();
-        $cents = number_format($amount * 100, 0, '.', '');
-        if ($cents === false || $cents < 0) {
+        $amountInCents = number_format($amount * 100, 0, '.', '');
+        if ($amountInCents === false || $amountInCents < 0) {
             $response->resultCode = 0;//unspecified error
             return $response;
         }
@@ -108,8 +108,7 @@ class ThirdPartyService
             if ($providerIdFromConfigFile === 2) {
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
                     $userId,
-                    $skinId,
-                    null
+                    $skinId
                 ]);
                 if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
                     $response->resultCode = -3;//user not found
@@ -118,8 +117,7 @@ class ThirdPartyService
             } else if ($this->thirdPartyIntegration->checkAndRegisterUser([
                     $userId,
                     $skinId,
-                    $providerIdFromConfigFile,
-                    null
+                    $providerIdFromConfigFile
                 ])['status'] == false
             ) {
                 $response->resultCode = -3;//user not found
@@ -130,7 +128,7 @@ class ThirdPartyService
                 $skinId,
                 $userId
             ]);
-            if ($thirdPartyServiceUser['status'] == false) {
+            if (array_key_exists('status', $thirdPartyServiceUser)) {
                 $response->resultCode = -3;//user not found
                 return $response;
             } else if ($thirdPartyServiceUser['rights'] & 0x08000000) {
@@ -146,7 +144,27 @@ class ThirdPartyService
         }
         $sessionId = $this->sessionManager->startSessionAndGetSessionId();
         if ($gameId != 0) {
-
+            $params = [
+                'partnerId' => $thirdPartyServiceUser['skinid'],
+                'gameId'    => $gameId,
+                'currency'  => is_null($campaignId) ? $thirdPartyServiceUser['currency'] : 'FUN',
+                'token'     => $sessionId,
+                'language'  => $language,
+                'mobile'    => !!($option & 1),
+                'demo'      => !!($option & 2),
+                'userId'    => $userId
+            ];
+            $thirdPartyServiceUser['sessionData'] = [
+                'userId'           => $thirdPartyServiceUser['userid'],
+                'ip'               => $ip,
+                'option'           => $option,
+                'isDemo'           => false,
+                'gameId'           => $gameId,
+                'currentTimestamp' => time(),
+                'age'              => 0,
+                'amount'           => $amountInCents
+            ];
+            $gameData = $this->core->getGameShortData($gameId);
         }
 
         $response->resultCode = 3233;
@@ -166,7 +184,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBets(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegration(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager());
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager());
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {

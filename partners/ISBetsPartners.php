@@ -16,16 +16,16 @@ use Configs\CurrencyCodes;
 use Helpers\SoapHelpers\ISBetsSoapClient;
 
 /**
- * Class ISBets
+ * Class ISBetsPartners
  * @package Partners
  */
-class ISBets extends AbstractPartners
+class ISBetsPartners extends AbstractPartners
 {
     private $ISBetsCodes;
     private $currencyCodes;
 
     /**
-     * ISBets constructor.
+     * ISBetsPartners constructor.
      * @param ISBetsCodes $ISBetsCodes
      * @param CurrencyCodes $currencyCodes
      */
@@ -43,7 +43,7 @@ class ISBets extends AbstractPartners
      */
     public function checkAndRegisterUser(array $arrayOfParams): array
     {
-        list($userId, $skinId, $soapClient) = $arrayOfParams;
+        @list($userId, $skinId, $soapClient) = $arrayOfParams;
         $returnData = [];//initializing return array variable
         $userDetails = null;//initializing variable for fetching user from db
         $query = $this->db->prepare("SELECT c.extern_username, 
@@ -65,7 +65,7 @@ class ISBets extends AbstractPartners
             return $returnData;
         }
         if ($query->rowCount() > 0) {
-            $userDetails = $query->fetchObject();
+            $userDetails = $query->fetch(\PDO::FETCH_OBJ);
             $returnData = [
                 'status'  => 1,
                 'pokerId' => $userDetails->userid
