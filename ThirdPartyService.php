@@ -33,6 +33,8 @@ use Configs\ISBetsCodes;
 use Configs\ThirdPartyIntegrationCodes;
 //users
 use Users\ServiceUsers;
+//backOffice
+use BackOffice\Core;
 
 /**
  * Class ThirdPartyService
@@ -45,6 +47,7 @@ class ThirdPartyService
     public $thirdPartyIntegration;
     public $serviceUsers;
     private $sessionManager;
+    private $core;
 
     /**
      * ThirdPartyService constructor.
@@ -54,8 +57,9 @@ class ThirdPartyService
      * @param AbstractPartners $thirdPartyIntegration
      * @param ServiceUsers $serviceUsers
      * @param SessionManager $sessionManager
+     * @param Core $core
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
@@ -63,6 +67,7 @@ class ThirdPartyService
         $this->thirdPartyIntegration = $thirdPartyIntegration;
         $this->serviceUsers = $serviceUsers;
         $this->sessionManager = $sessionManager;
+        $this->core = $core;
     }
 
     /**
@@ -165,6 +170,9 @@ class ThirdPartyService
                 'amount'           => $amountInCents
             ];
             $gameData = $this->core->getGameShortData($gameId);
+            if (array_key_exists('status', $gameData) || empty($gameData['provider_id']) || empty($gameData['game_id'])) {
+                throw new \SoapFault('INVALID GAME ID', 'Invalid game ID passed');
+            }
         }
 
         $response->resultCode = 3233;
@@ -184,7 +192,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager());
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core());
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
