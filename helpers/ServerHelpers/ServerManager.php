@@ -39,7 +39,7 @@ class ServerManager
     public function callExternalMethod(string $functionName, array $postParams, $url = null): array
     {
         if ($url == null) {
-            $url = "http://" . ConfigManager::getServerAddress() . ":" . (ConfigManager::getServerNePort() != null ? ConfigManager::getServerNePort() : 8002) . "/";
+            $url = "http://" . ConfigManager::getServer('address') . ":" . (ConfigManager::getServer('nePort') != null ? ConfigManager::getServer('nePort') : 8002) . "/";
         }
         $postParams = $this->checkAndFixPostParams($functionName, $postParams);
         $encoded = http_build_query($postParams) . "&" . urlencode("action") . "=" . urlencode($functionName);

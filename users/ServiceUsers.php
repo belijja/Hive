@@ -26,7 +26,7 @@ class ServiceUsers
     {
         list($providerId, $skinId, $userId) = $params;
         $returnData = [];
-        $query = Db::getInstance(ConfigManager::getDbDatabase(true))->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
+        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
                                                           GREATEST(f.level, f.retained_level) AS level, 
                                                           f.amount AS fpp_amount, 
                                                           r.amount AS r_amount, 
@@ -62,7 +62,7 @@ class ServiceUsers
     public function getPokerSkinId(int $providerId, int $skinId): array
     {
         $returnData = [];
-        $query = Db::getInstance(ConfigManager::getDbDatabase(true))->prepare("SELECT poker_skinid 
+        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT poker_skinid 
                                                           FROM provider_skin_mapping 
                                                           WHERE provider_id = :providerId 
                                                           AND provider_skinid = :skinId");

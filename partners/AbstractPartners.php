@@ -28,7 +28,7 @@ abstract class AbstractPartners
     public function __construct(ServerManager $serverManager, ISoapClient $soapClient)
     {
         $this->serverManager = $serverManager;
-        $this->db = Db::getInstance(ConfigManager::getDbDatabase(true));
+        $this->db = Db::getInstance(ConfigManager::getDb('database', true));
         $this->soapClient = $soapClient;
     }
 

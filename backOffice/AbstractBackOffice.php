@@ -21,6 +21,6 @@ class AbstractBackOffice
      */
     public function __construct()
     {
-        $this->db = Db::getInstance(ConfigManager::getDbDatabase(false));
+        $this->db = Db::getInstance(ConfigManager::getDb('database', false));
     }
 }

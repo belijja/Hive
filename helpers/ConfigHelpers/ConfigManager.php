@@ -21,11 +21,12 @@ class ConfigManager
     private static $wsdl;
     private static $ISBets;
     private static $server;
+    private static $netent;
 
     /**
      * @throws \SoapFault
      */
-    private static function parseConfigFile()
+    public static function parseConfigFile()
     {
         if (!$config = parse_ini_file('config.ini', true)) {
             $error = error_get_last();
@@ -37,6 +38,7 @@ class ConfigManager
         self::$wsdl = $config['WSDL'];
         self::$ISBets = $config['ISBETS'];
         self::$server = $config['SERVER'];
+        self::$netent = $config['NETENT'];
     }
 
     /**
@@ -70,84 +72,39 @@ class ConfigManager
     }
 
     /**
+     * @param string $key
      * @return string
      */
-    public static function getServerAddress(): string
+    public static function getNetent(string $key): string
     {
-        self::parseConfigFile();
-        return self::$server['address'];
+        return self::$netent[$key];
     }
 
     /**
+     * @param string $key
      * @return string
      */
-    public static function getServerPort(): string
+    public static function getServer(string $key): string
     {
-        self::parseConfigFile();
-        return self::$server['port'];
+        return self::$server[$key];
     }
 
     /**
+     * @param string $key
      * @return string
      */
-    public static function getServerNePort(): string
+    public static function getISBets(string $key): string
     {
-        self::parseConfigFile();
-        return self::$server['nePort'];
+        return self::$ISBets[$key];
     }
 
     /**
+     * @param string $key
      * @return string
      */
-    public static function getISBetsApiConnectionTimeout(): string
+    public static function getWsdl(string $key): string
     {
-        self::parseConfigFile();
-        return self::$ISBets['apiConnectionTimeout'];
-    }
-
-    /**
-     * @return string
-     */
-    public static function getISBetsApiUri(): string
-    {
-        self::parseConfigFile();
-        return self::$ISBets['apiUri'];
-    }
-
-    /**
-     * @return string
-     */
-    public static function getISBetsApiPass(): string
-    {
-        self::parseConfigFile();
-        return self::$ISBets['apiPassword'];
-    }
-
-    /**
-     * @return string
-     */
-    public static function getISBetsApiAccount(): string
-    {
-        self::parseConfigFile();
-        return self::$ISBets['apiAccount'];
-    }
-
-    /**
-     * @return string
-     */
-    public static function getISBetsProviderId(): string
-    {
-        self::parseConfigFile();
-        return self::$ISBets['localProviderId'];
-    }
-
-    /**
-     * @return string
-     */
-    public static function getWsdlCacheDir(): string
-    {
-        self::parseConfigFile();
-        return self::$wsdl['wsdlCacheDir'];
+        return self::$wsdl[$key];
     }
 
     /**
@@ -156,48 +113,17 @@ class ConfigManager
      */
     public static function getThirdPartyServicePartners($key): array
     {
-        self::parseConfigFile();
         return self::$thirdPartyServicePartners[$key];
     }
 
     /**
-     * @param bool $first
+     * @param string $key
+     * @param bool $firstDb
      * @return string
      */
-    public static function getDbHost(bool $first): string
+    public static function getDb(string $key, bool $firstDb): string
     {
-        self::parseConfigFile();
-        return $first ? self::$firstDb['host'] : self::$secondDb['host'];
-    }
-
-    /**
-     * @param bool $first
-     * @return string
-     */
-    public static function getDbDatabase(bool $first): string
-    {
-        self::parseConfigFile();
-        return $first ? self::$firstDb['database'] : self::$secondDb['database'];
-    }
-
-    /**
-     * @param bool $first
-     * @return string
-     */
-    public static function getDbUser(bool $first): string
-    {
-        self::parseConfigFile();
-        return $first ? self::$firstDb['user'] : self::$secondDb['user'];
-    }
-
-    /**
-     * @param bool $first
-     * @return string
-     */
-    public static function getDbPass(bool $first): string
-    {
-        self::parseConfigFile();
-        return $first ? self::$firstDb['pass'] : self::$secondDb['pass'];
+        return $firstDb ? self::$firstDb[$key] : self::$secondDb[$key];
     }
 }
 

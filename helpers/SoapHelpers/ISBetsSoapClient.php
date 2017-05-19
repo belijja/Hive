@@ -71,21 +71,21 @@ class ISBetsSoapClient implements ISoapClient
 
     private function getISBetsSoapClient(string $service = 'Users'): \SoapClient
     {
-        return new \SoapClient(ConfigManager::getISBetsApiUri() . "/" . $service . ".svc?wsdl", [
+        return new \SoapClient(ConfigManager::getISBets('apiUri') . "/" . $service . ".svc?wsdl", [
             'trace'              => 1,
             'exceptions'         => 0,
             'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-            'connection_timeout' => ConfigManager::getISBetsApiConnectionTimeout()
+            'connection_timeout' => ConfigManager::getISBets('apiConnectionTimeout')
         ]);
     }
 
     private function initISBetsParams(int $skinId, string $apiAccount = null, string $apiPass = null): array
     {
         if (!isset($apiAccount)) {
-            $apiAccount = ConfigManager::getISBetsApiAccount();
+            $apiAccount = ConfigManager::getISBets('apiAccount');
         }
         if (!isset($apiPass)) {
-            $apiPass = ConfigManager::getISBetsApiPass();
+            $apiPass = ConfigManager::getISBets('apiPassword');
         }
         $params = [
             '_APIAccount'  => $apiAccount,

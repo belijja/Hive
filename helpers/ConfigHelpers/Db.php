@@ -25,16 +25,16 @@ class Db
     private function __construct($db)
     {
         switch ($db) {
-            case ConfigManager::getDbDatabase(true):
+            case ConfigManager::getDb('database', true):
                 try {
-                    $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDbHost(true) . ";dbname=" . ConfigManager::getDbDatabase(true) . ";charset=utf8", ConfigManager::getDbUser(true), ConfigManager::getDbPass(true));
+                    $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDb('host', true) . ";dbname=" . ConfigManager::getDb('database', true) . ";charset=utf8", ConfigManager::getDb('user', true), ConfigManager::getDb('pass', true));
                 } catch (\PDOException $ex) {
                     echo $ex->getMessage();
                 }
             break;
-            case ConfigManager::getDbDatabase(false):
+            case ConfigManager::getDb('database', false):
                 try {
-                    $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDbHost(false) . ";dbname=" . ConfigManager::getDbDatabase(false) . ";charset=utf8", ConfigManager::getDbUser(false), ConfigManager::getDbPass(false));
+                    $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDb('host', false) . ";dbname=" . ConfigManager::getDb('database', false) . ";charset=utf8", ConfigManager::getDb('user', false), ConfigManager::getDb('pass', false));
                 } catch (\PDOException $ex) {
                     echo $ex->getMessage();
                 }

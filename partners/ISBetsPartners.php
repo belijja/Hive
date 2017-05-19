@@ -56,7 +56,7 @@ class ISBetsPartners extends AbstractPartners
                                              AND c.casino_id = :userId 
                                              AND c.skin_id = :skinId");//fetching user details
         if (!$query->execute([
-            ':ISBetsProviderId' => ConfigManager::getISBetsProviderId(),
+            ':ISBetsProviderId' => ConfigManager::getISBets('localProviderId'),
             ':userId'           => $userId,
             ':skinId'           => $skinId
         ])
@@ -83,7 +83,7 @@ class ISBetsPartners extends AbstractPartners
                 $this->checkAndAddAffiliate($skinId, $ISBetsUserInfo->GetUserInfoResult->_FatherID, $soapClient);
                 $params['affiliateId'] = $ISBetsUserInfo->GetUserInfoResult->_FatherID;
             }
-            $params['providerId'] = ConfigManager::getISBetsProviderId();
+            $params['providerId'] = ConfigManager::getISBets('localProviderId');
             $params['userId'] = $userId;
             $params['skinId'] = $skinId;
             $params['password'] = 'invalid password';
@@ -143,7 +143,7 @@ class ISBetsPartners extends AbstractPartners
                                              AND provider_id = :ISBetsProviderId");
         if (!$query->execute([
                 ':fatherId'         => $fatherId,
-                ':ISBetsProviderId' => ConfigManager::getISBetsProviderId()
+                ':ISBetsProviderId' => ConfigManager::getISBets('localProviderId')
             ]) || $query->rowCount() == 0
         ) {
             $ISBetsUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $soapClient);
@@ -169,7 +169,7 @@ class ISBetsPartners extends AbstractPartners
                 $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
-                    ':providerId'          => ConfigManager::getISBetsProviderId(),
+                    ':providerId'          => ConfigManager::getISBets('localProviderId'),
                     ':providerAffiliateId' => $fatherId,
                     ':pokerAffiliateId'    => $pokerAffiliateId
                 ])

@@ -63,7 +63,7 @@ class SoapManager
     public function namespaceToWsdlFilename(string $namespace): string
     {
         $url = parse_url($namespace);
-        $fileName = ConfigManager::getWsdlCacheDir() . $url['host'] . str_replace([
+        $fileName = ConfigManager::getWsdl('wsdlCacheDir') . $url['host'] . str_replace([
                 '/',
                 '.php'
             ], [

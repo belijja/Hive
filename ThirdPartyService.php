@@ -35,6 +35,8 @@ use Configs\ThirdPartyIntegrationCodes;
 use Users\ServiceUsers;
 //backOffice
 use BackOffice\Core;
+//providers
+use Providers\NetentProvider;
 
 /**
  * Class ThirdPartyService
@@ -48,6 +50,7 @@ class ThirdPartyService
     public $serviceUsers;
     private $sessionManager;
     private $core;
+    private $NetentProvider;
 
     /**
      * ThirdPartyService constructor.
@@ -58,8 +61,9 @@ class ThirdPartyService
      * @param ServiceUsers $serviceUsers
      * @param SessionManager $sessionManager
      * @param Core $core
+     * @param NetentProvider $NetentProvider
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
@@ -68,6 +72,7 @@ class ThirdPartyService
         $this->serviceUsers = $serviceUsers;
         $this->sessionManager = $sessionManager;
         $this->core = $core;
+        $this->NetentProvider = $NetentProvider;
     }
 
     /**
@@ -173,6 +178,13 @@ class ThirdPartyService
             if (array_key_exists('status', $gameData) || empty($gameData['provider_id']) || empty($gameData['game_id'])) {
                 throw new \SoapFault('INVALID GAME ID', 'Invalid game ID passed');
             }
+            if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
+                if (!$is_demo) {
+                    $user = $this->NetentProvider->login($thirdPartyServiceUser);
+                } else {
+                    $params['sessionId'] = 'DEMO-' . rand(100000, 999999);
+                }
+            }
         }
 
         $response->resultCode = 3233;
@@ -184,6 +196,7 @@ class ThirdPartyService
     }
 }
 
+ConfigManager::parseConfigFile();
 $uri = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
 
 if (isset($_GET['wsdl'])) {
@@ -192,7 +205,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core());
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider());
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
