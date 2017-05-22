@@ -31,7 +31,7 @@ use Partners\AbstractPartners;
 //configs
 use Configs\CurrencyCodes;
 use Configs\ISBetsCodes;
-use Configs\ThirdPartyIntegrationCodes;
+use Configs\ThirdPartyIntegrationConfigs;
 //users
 use Users\ServiceUsers;
 //backOffice
@@ -108,7 +108,7 @@ class ThirdPartyService
     public function GetWalletedGameURL(int $skinId, int $userId, int $gameId, float $amount, string $language, int $option, string $ip = null, int $campaignId = null, int $platform = null): IServiceModels
     {
         $response = new WalletedGameURL();
-        $amountInCents = number_format($amount * 100, 0, '.', '');
+        $amountInCents = (int)number_format($amount * 100, 0, '.', '');
         if ($amountInCents === false || $amountInCents < 0) {
             $response->resultCode = 0;//unspecified error
             return $response;
@@ -181,7 +181,7 @@ class ThirdPartyService
             }
             if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
                 if (!$is_demo) {
-                    $user = $this->NetentProvider->login($thirdPartyServiceUser);
+                    $user = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
                 } else {
                     $params['sessionId'] = 'DEMO-' . rand(100000, 999999);
                 }
@@ -206,7 +206,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationConfigs()), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {

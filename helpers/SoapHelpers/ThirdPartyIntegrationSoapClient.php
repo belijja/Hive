@@ -9,13 +9,13 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Configs\ThirdPartyIntegrationCodes;
+use Configs\ThirdPartyIntegrationConfigs;
 
 class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
     private $tpiConfigs;
 
-    public function __construct(ThirdPartyIntegrationCodes $tpiConfigs)
+    public function __construct(ThirdPartyIntegrationConfigs $tpiConfigs)
     {
         $this->tpiConfigs = $tpiConfigs;
     }

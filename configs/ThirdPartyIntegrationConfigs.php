@@ -12,10 +12,10 @@ namespace Configs;
 use Helpers\ConfigHelpers\ConfigManager;
 
 /**
- * Class ThirdPartyIntegrationCodes
+ * Class ThirdPartyIntegrationConfigs
  * @package Configs
  */
-class ThirdPartyIntegrationCodes
+class ThirdPartyIntegrationConfigs
 {
 
     private $tpiConfigs = [

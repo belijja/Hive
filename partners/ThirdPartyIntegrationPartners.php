@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Partners;
 
-use Configs\ThirdPartyIntegrationCodes;
+use Configs\ThirdPartyIntegrationConfigs;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 
@@ -24,9 +24,9 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
 
     /**
      * ThirdPartyIntegrationPartners constructor.
-     * @param ThirdPartyIntegrationCodes $tpiConfigs
+     * @param ThirdPartyIntegrationConfigs $tpiConfigs
      */
-    public function __construct(ThirdPartyIntegrationCodes $tpiConfigs)
+    public function __construct(ThirdPartyIntegrationConfigs $tpiConfigs)
     {
         $this->tpiConfigs = $tpiConfigs;
         parent::__construct(new ServerManager(), new ThirdPartyIntegrationSoapClient($this->tpiConfigs));
