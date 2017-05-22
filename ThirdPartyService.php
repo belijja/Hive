@@ -23,6 +23,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
+use Helpers\SoapHelpers\NetentSoapClient;
 //partners
 use Partners\ISBetsPartners;
 use Partners\ThirdPartyIntegrationPartners;
@@ -205,7 +206,7 @@ if (isset($_GET['wsdl'])) {
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider());
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(new ISBetsCodes(), new CurrencyCodes()), new ThirdPartyIntegrationPartners(new ThirdPartyIntegrationCodes()), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
