@@ -28,57 +28,57 @@ class NetentProvider
     }
 
     /**
-     * @param array $user
+     * @param array $thirdPartyServiceUser
      * @param array $gameData
      * @param int $amountInCents
      * @param string|null $ip
      * @param int|null $platform
      * @param int|null $campaignId
-     * @return array
+     * @return string
      * @throws \SoapFault
      */
-    public function login(array $user, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null): array
+    public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null)
     {
-        $sessionId = $this->loginUser($user);
+        $sessionId = $this->loginUser($thirdPartyServiceUser);
         if (is_soap_fault($sessionId)) {
             throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
         }
-        $sessionDetails = $this->createSession($user, $gameData, $amountInCents, $ip, $platform, $campaignId, $sessionId . ":" . $gameData['game_id']);
-        if ($sessionDetails['status'] == false) {
+        $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $sessionId . ":" . $gameData['game_id']);
+        /*if ($sessionDetails['status'] == false) {
             if (is_soap_fault($this->logoutUser($sessionId))) {
                 throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
             }
-            $this->login($user, $gameData, $amountInCents, $ip, $platform, $campaignId);
+            $this->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
         }
         if ($sessionDetails['returnCode'] != 1) {
-            return $sessionDetails['returnCode'];
+            return null;//change return values
         } else {
-            return $sessionId;
-        }
+            return null;//change return values
+        }*/
     }
 
-    private function createSession(array $user, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $sessionId = null)
+    private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $sessionId = null)
     {
         $returnValue = [];
-        $user = UsersFactory::getUser($gameData['provider_id'], $user['provider_id']);//add tpgConfigs
+        $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
         if (is_null($user)) {
             error_log('Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
             $returnValue['returnCode'] = -3;
             return $returnValue;
         }
         if (isset($sessionId)) {
-            $user->getTokenFromSession($sessionId, $user['sessionData']['gameId']);
+            $user->getTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);
         }
         return null;
     }
 
     /**
      * @param array $user
-     * @return \Exception|mixed
+     * @return string
      */
-    private function loginUser(array $user): array
+    private function loginUser(array $user): string
     {
-        $returnFromNetent = [];
+        /*$returnFromNetent = [];
         try {
             $soapClient = $this->soapClient->getSoapClient();
             $userParams = [
@@ -98,8 +98,9 @@ class NetentProvider
             return $returnFromNetent;
         }
         $returnFromNetent = get_object_vars($loginUserReturn);
-        /*return end($returnFromNetent);*/
-        return ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
+        return end($returnFromNetent);*/
+        $returnValue = ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
+        return end($returnValue);
     }
 
 }

@@ -111,8 +111,8 @@ class ThirdPartyService
         }
         $is_demo = ($option & 2) && $gameId != 0;
         $providerIdFromConfigFile = (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
-        if (!$is_demo) {
-            if ($providerIdFromConfigFile === 2) {
+        if (!$is_demo) {//if it's not demo game
+            if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
                     $userId,
                     $skinId
@@ -121,7 +121,7 @@ class ThirdPartyService
                     $response->resultCode = -3;//user not found
                     return $response;
                 }
-            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([
+            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([//registering if it's third party user
                     $userId,
                     $skinId,
                     $providerIdFromConfigFile
@@ -130,7 +130,7 @@ class ThirdPartyService
                 $response->resultCode = -3;//user not found
                 return $response;
             }
-            $thirdPartyServiceUser = $this->serviceUsers->getUserData([
+            $thirdPartyServiceUser = $this->serviceUsers->getUserData([//get data about the user
                 $providerIdFromConfigFile,
                 $skinId,
                 $userId
@@ -142,20 +142,21 @@ class ThirdPartyService
                 $response->resultCode = -4;//player blocked for API
                 return $response;
             }
-        } else {
+        } else {//if it's a demo game
             $thirdPartyServiceUser = [];
             $thirdPartyServiceUser['userId'] = -1;
             $thirdPartyServiceUser['currency'] = 'EUR';
             $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
             $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
         }
-        $sessionId = $this->sessionManager->startSessionAndGetSessionId();
+        $sessionId = $this->sessionManager->startSessionAndGetSessionId();//starting session and getting session id
         if ($gameId != 0) {
             $params = [
                 'partnerId' => $thirdPartyServiceUser['skinid'],
                 'gameId'    => $gameId,
                 'currency'  => is_null($campaignId) ? $thirdPartyServiceUser['currency'] : 'FUN',
                 'token'     => $sessionId,
+                //session id becomes token
                 'language'  => $language,
                 'mobile'    => !!($option & 1),
                 'demo'      => !!($option & 2),
@@ -171,14 +172,14 @@ class ThirdPartyService
                 'age'              => 0,
                 'amount'           => $amountInCents
             ];
-            $gameData = $this->core->getGameShortData($gameId);
+            $gameData = $this->core->getGameShortData($gameId);//fetching info about the game from back office
             if (array_key_exists('status', $gameData) || empty($gameData['provider_id']) || empty($gameData['game_id'])) {
                 throw new \SoapFault('INVALID GAME ID', 'Invalid game ID passed');
             }
             if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
-                if (!$is_demo) {
-                    $user = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
-                } else {
+                if (!$is_demo) {//if it's not a demo game
+                    $params['sessionId'] = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
+                } else {//if it is a demo game
                     $params['sessionId'] = 'DEMO-' . rand(100000, 999999);
                 }
             }

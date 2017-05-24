@@ -1,0 +1,23 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Branislav Malidzan
+ * Date: 24.05.2017
+ * Time: 14:30
+ */
+declare(strict_types = 1);
+
+namespace Users;
+
+class SKSUser extends AbstractUsers
+{
+    /**
+     * SKSUser constructor.
+     * @param array $user
+     * @param array $config
+     */
+    public function __construct(array $user, array $config)
+    {
+        parent::__construct($user, $config);
+    }
+}

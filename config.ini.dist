@@ -39,8 +39,4 @@ merchantPassword =
 apiLocation =
 apiConnectionTimeout =
 
-[HANDLERS]
-2 =
-1001 =
-
 
