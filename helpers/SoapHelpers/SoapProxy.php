@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-class SoapProxy extends \SoapClient
+class SoapProxy
 {
     private $tpiConfig;
 

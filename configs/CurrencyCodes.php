@@ -27,7 +27,7 @@ class CurrencyCodes
     private const  CURRENCY_ID_UAH = 10;
     private const  CURRENCY_ID_PEN = 11;
 
-    private $currencyNames = [
+    private static $currencyNames = [
         "1"  => "EUR",
         "2"  => "USD",
         "3"  => "GBP",
@@ -40,7 +40,7 @@ class CurrencyCodes
         "10" => "UAH",
         "11" => "PEN"
     ];
-    private $currencyIds = [
+    private static $currencyIds = [
         "EUR" => self::CURRENCY_ID_EUR,
         "USD" => self::CURRENCY_ID_USD,
         "GBP" => self::CURRENCY_ID_GBP,
@@ -58,18 +58,18 @@ class CurrencyCodes
      * @param string $key
      * @return string
      */
-    public function getCurrencyNames(string $key): string
+    public static function getCurrencyNames(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, $this->currencyNames);
+        return ConfigManager::checkIfKeyExists($key, self::$currencyNames);
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public function getCurrencyIds(string $key): string
+    public static function getCurrencyIds(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, $this->currencyIds);
+        return ConfigManager::checkIfKeyExists($key, self::$currencyIds);
     }
 
 }

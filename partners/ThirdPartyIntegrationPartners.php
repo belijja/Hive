@@ -20,16 +20,12 @@ use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 class ThirdPartyIntegrationPartners extends AbstractPartners
 {
 
-    private $tpiConfigs;
-
     /**
      * ThirdPartyIntegrationPartners constructor.
-     * @param ThirdPartyIntegrationConfigs $tpiConfigs
      */
-    public function __construct(ThirdPartyIntegrationConfigs $tpiConfigs)
+    public function __construct()
     {
-        $this->tpiConfigs = $tpiConfigs;
-        parent::__construct(new ServerManager(), new ThirdPartyIntegrationSoapClient($this->tpiConfigs));
+        parent::__construct(new ServerManager(), new ThirdPartyIntegrationSoapClient());
     }
 
     /**
@@ -73,7 +69,6 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
      */
     public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
     {
-        $this->tpiConfigs = $this->tpiConfigs->getTpiConfigs($pokerSkinId);//making variable shorter
         $needUpdate = false;
         $isFirstLogin = 1;
         $returnData = [];
@@ -87,10 +82,10 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                                                  AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
-                ':providerId' => $this->tpiConfigs['providerId'],
+                ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
                 //only for com
                 ':userId'     => $userId,
-                ':partnerId'  => $this->tpiConfigs['partnerId']
+                ':partnerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId']
                 //only for com
             ]);
             if ($result && $query->rowCount() == 1) {
@@ -112,10 +107,10 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                                                  AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
-                ':providerId' => $this->tpiConfigs['providerId'],
+                ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
                 //only for com
                 ':userId'     => $userId,
-                ':partnerId'  => $this->tpiConfigs['partnerId']
+                ':partnerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId']
                 //only for com
             ]);
         }
@@ -139,16 +134,16 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];
-            $params['providerId'] = $this->tpiConfigs['providerId'];
+            $params['providerId'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'];
             $params['userId'] = $userId;
-            $params['skinId'] = $this->tpiConfigs['partnerId'];
+            $params['skinId'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
                 $query = $this->db->prepare("SELECT * 
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
                 $query->execute([
-                    ':providerId' => $this->tpiConfigs['providerId'],
+                    ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
@@ -162,7 +157,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                         $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                              VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
-                            ':providerId'  => $this->tpiConfigs['providerId'],
+                            ':providerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
                             ':agentId'     => $user->agentId,
                             ':affiliateId' => $affiliateId
                         ]);

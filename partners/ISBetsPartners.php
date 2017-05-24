@@ -21,19 +21,9 @@ use Helpers\SoapHelpers\ISBetsSoapClient;
  */
 class ISBetsPartners extends AbstractPartners
 {
-    private $ISBetsCodes;
-    private $currencyCodes;
-
-    /**
-     * ISBetsPartners constructor.
-     * @param ISBetsCodes $ISBetsCodes
-     * @param CurrencyCodes $currencyCodes
-     */
-    public function __construct(ISBetsCodes $ISBetsCodes, CurrencyCodes $currencyCodes)
+    public function __construct()
     {
         parent::__construct(new ServerManager(), new ISBetsSoapClient());
-        $this->ISBetsCodes = $ISBetsCodes;
-        $this->currencyCodes = $currencyCodes;
     }
 
     /**
@@ -90,20 +80,20 @@ class ISBetsPartners extends AbstractPartners
             $params['email'] = $user->Email;
             $params['firstName'] = $user->Firstname;
             $params['lastName'] = $user->Lastname;
-            if (isset($user->RegionResidenceCode) && $this->ISBetsCodes->getPGDARegionCodes($user->RegionResidenceCode) != null) {
-                $params['state'] = $this->ISBetsCodes->getPGDARegionCodes($user->RegionResidenceCode);
-            } else if (isset($user->ProvinceResidenceCode) && $this->ISBetsCodes->getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
-                $params['state'] = $this->ISBetsCodes->getPGDAProvinceCodes($user->ProvinceResidenceCode);
+            if (isset($user->RegionResidenceCode) && ISBetsCodes::getPGDARegionCodes($user->RegionResidenceCode) != null) {
+                $params['state'] = ISBetsCodes::getPGDARegionCodes($user->RegionResidenceCode);
+            } else if (isset($user->ProvinceResidenceCode) && ISBetsCodes::getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
+                $params['state'] = ISBetsCodes::getPGDAProvinceCodes($user->ProvinceResidenceCode);
             } else {
                 $params['state'] = 99;
             }
             $params['city'] = $user->City;
             $params['street'] = $user->Address;
-            $params['country'] = $this->ISBetsCodes->getCountryCodes($user->Country)['code'];
+            $params['country'] = ISBetsCodes::getCountryCodes($user->Country)['code'];
             $params['zip'] = $user->Zip;
             $params['dateOfBirth'] = substr($user->Birthdate, 0, 10);
             $params['phone'] = $user->Phone;
-            $params['currencyCode'] = $this->ISBetsCodes->getCurrencyCodes((string)$user->Currency)['code'];
+            $params['currencyCode'] = ISBetsCodes::getCurrencyCodes((string)$user->Currency)['code'];
             $params['externalUsername'] = $user->Username;
             if ($query->rowCount() == 0) {
                 $params['active'] = 1;
@@ -114,8 +104,8 @@ class ISBetsPartners extends AbstractPartners
             } else {
                 $params['username'] = $userDetails->username;
                 $params['isFirstLogin'] = $userDetails->isFirst ? 1 : 0;
-                $currencyId = $this->currencyCodes->getCurrencyIds($params['currencyCode']);//making variable shorter
-                if ($this->currencyCodes->getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
+                $currencyId = CurrencyCodes::getCurrencyIds($params['currencyCode']);//making variable shorter for using in error_log function
+                if (CurrencyCodes::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
                     error_log('PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId);
                     $returnData['status'] = false;
                     return $returnData;
@@ -161,7 +151,7 @@ class ISBetsPartners extends AbstractPartners
                     ':phone'    => $user->Phone,
                     ':city'     => $user->City,
                     ':address'  => $user->Address,
-                    ':country'  => $this->ISBetsCodes->getCountryCodes($user->Country)['code'],
+                    ':country'  => ISBetsCodes::getCountryCodes($user->Country)['code'],
                     ':zip'      => $user->Zip
                 ]) && $query->rowCount() > 0
             ) {

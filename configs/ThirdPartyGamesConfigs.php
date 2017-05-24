@@ -13,7 +13,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 
 class ThirdPartyGamesConfigs
 {
-    private $tpgConfigs = [
+    private static $tpgConfigs = [
         'tpg'         => [
             'password'     => 'tpgpass',
             'providerId'   => 9,
@@ -71,8 +71,8 @@ class ThirdPartyGamesConfigs
         ]
     ];
 
-    public function getTpgConfigs(int $providerName): array
+    public static function getTpgConfigs(int $providerName = null): array
     {
-        return ConfigManager::checkIfArrayExists((string)$providerName, $this->tpgConfigs);
+        return !is_null($providerName) ? ConfigManager::checkIfArrayExists((string)$providerName, self::$tpgConfigs) : self::$tpgConfigs;
     }
 }

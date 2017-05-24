@@ -14,20 +14,12 @@ use Helpers\ConfigHelpers\ConfigManager;
 
 class UsersFactory
 {
-
-    private static $tpiConfigs;
-
-    public function __construct(ThirdPartyGamesConfigs $tpiConfigs)
-    {
-        self::$tpiConfigs = $tpiConfigs;
-    }
-
-    public static function getUser($providerId)
+    public static function getUser($gameProviderId, $userProviderId)
     {
         $user = null;
-        foreach (self::$tpiConfigs as $key => $value) {
-            if ($providerId == $value['providerId']) {
-                $handlerName = ConfigManager::getHandler($providerId);
+        foreach (ThirdPartyGamesConfigs::getTpgConfigs() as $key => $value) {
+            if ($gameProviderId == $value['providerId']) {
+                $handlerName = ConfigManager::getHandler($userProviderId);
                 $user = new $handlerName();
             }
         }

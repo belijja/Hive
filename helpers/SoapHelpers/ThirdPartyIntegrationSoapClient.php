@@ -13,12 +13,6 @@ use Configs\ThirdPartyIntegrationConfigs;
 
 class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
-    private $tpiConfigs;
-
-    public function __construct(ThirdPartyIntegrationConfigs $tpiConfigs)
-    {
-        $this->tpiConfigs = $tpiConfigs;
-    }
 
     public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null): /*array*/
     \stdClass
@@ -66,20 +60,20 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
         return $response;
         /*$params['userId'] = $userId;
         if ($soapClient == null) {
-            if (isset($this->tpiConfigs->getTpiConfigs($pokerSkinId)['wsdl'])) {
+            if (isset(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['wsdl'])) {
                 $params = [
                     'trace'              => 1,
                     'exceptions'         => 0,
                     'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-                    'connection_timeout' => $this->tpiConfigs->getTpiConfigs($pokerSkinId)['apiTimeout']
+                    'connection_timeout' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['apiTimeout']
                 ];
-                if (isset($this->tpiConfigs->getTpiConfigs($pokerSkinId)['user'])) {
-                    $params['login'] = $this->tpiConfigs->getTpiConfigs($pokerSkinId)['user'];
-                    $params['password'] = $this->tpiConfigs->getTpiConfigs($pokerSkinId)['password'];
+                if (isset(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['user'])) {
+                    $params['login'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['user'];
+                    $params['password'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['password'];
                 }
-                $soapClient = new \SoapClient($this->tpiConfigs->getTpiConfigs($pokerSkinId)['wsdl'], $params);
+                $soapClient = new \SoapClient(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['wsdl'], $params);
             } else {
-                $soapClient = new SoapProxy($this->tpiConfigs->getTpiConfigs($pokerSkinId));
+                $soapClient = new SoapProxy(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
             }
         }
         return $soapClient->UserGetInfo($params);*/

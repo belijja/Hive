@@ -14,7 +14,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 class ISBetsCodes
 {
 
-    private $countryCodes = [
+    private static $countryCodes = [
         '1'   => [
             'code' => 'AF',
             'name' => 'AFGHANISTAN'
@@ -945,7 +945,7 @@ class ISBetsCodes
         ],
     ];
 
-    private $PGDARegionCodes = [
+    private static $PGDARegionCodes = [
         'PIE' => 1,
         'VDA' => 2,
         'LOM' => 3,
@@ -967,12 +967,12 @@ class ISBetsCodes
         'SAR' => 20,
     ];
 
-    private $PGDAProvinceCodes = [
+    private static $PGDAProvinceCodes = [
         'BZ' => 21,
         'TN' => 22,
     ];
 
-    private $currencyCodes = [
+    private static $currencyCodes = [
         '1' => [
             'code'        => 'EUR',
             'description' => 'Euro'
@@ -1000,9 +1000,9 @@ class ISBetsCodes
      * @return array
      * @throws \SoapFault
      */
-    public function getCurrencyCodes(string $key): array
+    public static function getCurrencyCodes(string $key): array
     {
-        return ConfigManager::checkIfArrayExists($key, $this->currencyCodes);
+        return ConfigManager::checkIfArrayExists($key, self::$currencyCodes);
     }
 
     /**
@@ -1010,18 +1010,18 @@ class ISBetsCodes
      * @return array
      * @throws \SoapFault
      */
-    public function getCountryCodes(string $key): array
+    public static function getCountryCodes(string $key): array
     {
-        return ConfigManager::checkIfArrayExists($key, $this->countryCodes);
+        return ConfigManager::checkIfArrayExists($key, self::$countryCodes);
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public function getPGDARegionCodes(string $key): string
+    public static function getPGDARegionCodes(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, $this->PGDARegionCodes);
+        return ConfigManager::checkIfKeyExists($key, self::$PGDARegionCodes);
     }
 
     /**
@@ -1029,9 +1029,9 @@ class ISBetsCodes
      * @return string
      * @throws \SoapFault
      */
-    public function getPGDAProvinceCodes(string $key): string
+    public static function getPGDAProvinceCodes(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, $this->PGDAProvinceCodes);
+        return ConfigManager::checkIfKeyExists($key, self::$PGDAProvinceCodes);
     }
 
 }

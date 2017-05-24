@@ -18,7 +18,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 class ThirdPartyIntegrationConfigs
 {
 
-    private $tpiConfigs = [
+    private static $tpiConfigs = [
         0        => [
             'urlLanguages'     => [
                 0  => 'en',
@@ -238,9 +238,9 @@ class ThirdPartyIntegrationConfigs
      * @param int $skinId
      * @return array
      */
-    public function getTpiConfigs(int $skinId): array
+    public static function getTpiConfigs(int $skinId): array
     {
-        return ConfigManager::checkIfArrayExists((string)$skinId, $this->tpiConfigs);
+        return ConfigManager::checkIfArrayExists((string)$skinId, self::$tpiConfigs);
     }
 
 }

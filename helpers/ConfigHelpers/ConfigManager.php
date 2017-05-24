@@ -75,10 +75,10 @@ class ConfigManager
     }
 
     /**
-     * @param int $handlerId
+     * @param string $handlerId
      * @return string
      */
-    public static function getHandler(int $handlerId): string
+    public static function getHandler(string $handlerId): string
     {
         return self::$handlers[$handlerId];
     }

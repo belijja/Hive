@@ -59,7 +59,13 @@ class NetentProvider
 
     private function createSession(array $user, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $sessionId = null)
     {
-        $user = UsersFactory::getUser($user['providerId']);
+        $returnValue = [];
+        $user = UsersFactory::getUser($gameData['provider_id'], $user['provider_id']);//add tpgConfigs
+        if (is_null($user)) {
+            error_log('Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
+            $returnValue['returnCode'] = -3;
+            return $returnValue;
+        }
         if (isset($sessionId)) {
             $user->getTokenFromSession($sessionId, $user['sessionData']['gameId']);
         }
@@ -87,7 +93,7 @@ class NetentProvider
             ];
             $loginUserReturn = $soapClient->loginUserDetailed($userParams);
         } catch (\Exception $error) {
-            error_log("Netent login failed! " . var_export($error, true));
+            error_log("Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
             $returnFromNetent['status'] = $error;
             return $returnFromNetent;
         }
