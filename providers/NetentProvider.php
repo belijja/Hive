@@ -67,7 +67,11 @@ class NetentProvider
             return $returnValue;
         }
         if (isset($sessionId)) {
-            $user->getTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);
+            $cashierToken = $user->getCashierTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);
+            if (array_key_exists('cashiertoken', $cashierToken)) {
+                $returnValue['status'] = false;
+                return $returnValue;
+            }
         }
         return null;
     }
