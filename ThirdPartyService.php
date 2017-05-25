@@ -34,6 +34,8 @@ use Users\ServiceUsers;
 use BackOffice\Core;
 //providers
 use Providers\NetentProvider;
+//configs
+use Configs\ThirdPartyServicePartners;
 
 /**
  * Class ThirdPartyService
@@ -110,7 +112,7 @@ class ThirdPartyService
             return $response;
         }
         $is_demo = ($option & 2) && $gameId != 0;
-        $providerIdFromConfigFile = (int)ConfigManager::getThirdPartyServicePartners($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
+        $providerIdFromConfigFile = (int)ThirdPartyServicePartners::getTpsConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {//if it's not demo game
             if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
@@ -206,7 +208,7 @@ if (isset($_GET['wsdl'])) {
     $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(), new ThirdPartyIntegrationPartners(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
-    if (!isset($user) || !isset($pass) || ConfigManager::getThirdPartyServicePartners($user) == null || ConfigManager::getThirdPartyServicePartners($user)['password'] != $pass) {
+    if (!isset($user) || !isset($pass) || ThirdPartyServicePartners::getTpsConfigs($user) == null || ThirdPartyServicePartners::getTpsConfigs($user)['password'] != $pass) {
         header('WWW-Authenticate: Basic realm="ThirdPartyService"');
         header('HTTP/1.0 401 Unauthorized');
         echo 'Unauthorized';

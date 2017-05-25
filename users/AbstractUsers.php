@@ -46,7 +46,7 @@ class AbstractUsers
               g.internal_game_id, g.aams_game_id_desktop, g.aams_game_id_mobile, g.game_name, 
               tes.id as ext_session_id, tes.state as ext_session_state, tes.campaign_id, tes.amount as balance 
               FROM thirdparty_sessions ts 
-              LEFT JOIN tp_ext_sessions tes ON ts.session_id=tes.id 
+              LEFT JOIN tp_ext_sessions tes ON ts.session_id = tes.id 
               LEFT JOIN " . ConfigManager::getDb('database', false) . ".hg_provider p ON ts.thirdparty_provider_id = p.provider_id 
               LEFT JOIN " . ConfigManager::getDb('database', false) . ".hg_game g ON ts.game_id = g.internal_game_id 
               WHERE ts.thirdparty_provider_id = :providerId

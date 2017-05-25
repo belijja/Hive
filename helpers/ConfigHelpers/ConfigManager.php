@@ -109,15 +109,6 @@ class ConfigManager
     }
 
     /**
-     * @param $key
-     * @return array
-     */
-    public static function getThirdPartyServicePartners($key): array
-    {
-        return self::$thirdPartyServicePartners[$key];
-    }
-
-    /**
      * @param string $key
      * @param bool $firstDb
      * @return string

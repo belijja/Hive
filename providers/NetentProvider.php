@@ -67,7 +67,7 @@ class NetentProvider
             return $returnValue;
         }
         if (isset($sessionId)) {
-            $cashierToken = $user->getCashierTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);
+            $cashierToken = $user->getCashierTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
             if (array_key_exists('cashiertoken', $cashierToken)) {
                 $returnValue['status'] = false;
                 return $returnValue;
