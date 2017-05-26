@@ -40,6 +40,12 @@ class AbstractUsers
         $this->config = $config;
     }
 
+    /**
+     * @param string $sessionId
+     * @param int|null $gameId
+     * @param bool|null $isActive
+     * @return array
+     */
     public function getCashierTokenFromSession(string $sessionId, int $gameId = null, bool $isActive = null): array
     {
         $q = "SELECT ts.id, ts.session_id, ts.seq, ts.cashiertoken, (p.active AND g.active) AS active, ts.status, 
@@ -93,8 +99,92 @@ class AbstractUsers
         return $result;
     }
 
+    /**
+     * @return bool
+     */
     private function newTransactionOk(): bool
     {
         return (!isset($this->active) || $this->active) && $this->userNewTransactionOk();
+    }
+
+    /**
+     * @param string|null $sessionId
+     * @param $gameId
+     * @param null $date
+     * @return mixed
+     */
+    public function getGameSession(string $sessionId = null, $gameId, $date = null)
+    {
+        if (!isset($date)) {
+            $date = time();
+        }
+        return $this->insertThirdPartySession(0, $sessionId, 1, $gameId, $this->getNewCashierToken(), 0, 0, 0, 0, $date, $date);
+    }
+
+    /**
+     * @param string|null $oldCashierToken
+     * @param int $max
+     * @return string
+     */
+    public function getNewCashierToken(string $oldCashierToken = null, int $max = 5)
+    {
+        $cashierToken = '';
+        if (isset($oldCashierToken)) {
+            $cashierToken = $this->isCashierTokenTyped($oldCashierToken) ? $oldCashierToken : '';
+        } else {
+            if (is_array($this->user['sessionData'])) {
+                if ($this->user['sessionData']['option'] & 1) {
+                    $cashierToken = 'M';
+                } else {
+                    $cashierToken = 'X';
+                }
+            } else {
+                error_log('Missing session data! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($this->user, true));
+            }
+        }
+        for ($i = 0; $i < $max; $i++) {
+            $stringOfBytes = openssl_random_pseudo_bytes(4);
+            $cashierToken .= bin2hex($stringOfBytes);
+        }
+        return $cashierToken;
+    }
+
+    private function isCashierTokenTyped(string $oldCashierToken)
+    {
+        return $oldCashierToken[0] == 'M' || $oldCashierToken[0] == 'X';
+    }
+
+    public function insertThirdPartySession(int $status, string $sessionId, int $sequence, int $gameId, string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake, int $startDate, int $endDate, string $externalSessionId = null)
+    {
+        $newCashierToken = false;
+
+        if (!isset($sessionId)) {
+            $sessionId = hash("sha256", $cashierToken);
+        }
+
+        $q = "INSERT INTO thirdparty_sessions (session_id, status, uid, thirdparty_provider_id, game_id, seq, thirdparty_session_id, cashiertoken, nrhands, amount, bet, rake, sessionstart, sessionend) VALUES (:sessionId, :status, :userId, :thirdPartyProviderId, :gameId, :sequence, :thirdPartySessionId, :cashierToken, :numberOfHands, :amount, :bet, :rake, :sessionStart, :sessionEnd)";
+        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        if ($query->execute([
+                ':sessionId'            => $externalSessionId,
+                ':status'               => $status,
+                ':userId'               => $this->user['userid'],
+                ':thirdPartyProviderId' => $this->config['providerId'],
+                ':gameId'               => $gameId,
+                ':sequence'             => $sequence,
+                ':thirdPartySessionId'  => $sessionId,
+                //this variable comes from netent side and that is why it goes in thirdparty_session_id column
+                ':cashierToken'         => $cashierToken,
+                ':numberOfHands'        => $numberOfHands,
+                ':amount'               => $amount,
+                ':bet'                  => $bet,
+                ':rake'                 => $rake,
+                ':sessionStart'         => $startDate,
+                ':sessionEnd'           => $endDate
+            ]) && $query->rowCount() == 1
+        ) {
+            $r = 43;//query above doesn't work, continue here
+        }
+
+        return null;
     }
 }

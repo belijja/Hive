@@ -10,21 +10,22 @@ declare(strict_types = 1);
 namespace Providers;
 
 use Helpers\ConfigHelpers\ConfigManager;
+use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
 use Users\UsersFactory;
 
 class NetentProvider
 {
 
-    private $soapClient;
+    private $netentSoapClient;
 
     /**
      * NetentProvider constructor.
-     * @param NetentSoapClient $soapClient
+     * @param NetentSoapClient $netentSoapClient
      */
-    public function __construct(NetentSoapClient $soapClient)
+    public function __construct(NetentSoapClient $netentSoapClient)
     {
-        $this->soapClient = $soapClient;
+        $this->netentSoapClient = $netentSoapClient;
     }
 
     /**
@@ -39,8 +40,8 @@ class NetentProvider
      */
     public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null)
     {
-        $sessionId = $this->loginUser($thirdPartyServiceUser);
-        if (is_soap_fault($sessionId)) {
+        $sessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
+        if (is_soap_fault($sessionId) || array_key_exists('status', $sessionId)) {
             throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
         }
         $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $sessionId . ":" . $gameData['game_id']);
@@ -73,38 +74,29 @@ class NetentProvider
                 return $returnValue;
             }
         }
-        return null;
-    }
-
-    /**
-     * @param array $user
-     * @return string
-     */
-    private function loginUser(array $user): string
-    {
-        /*$returnFromNetent = [];
-        try {
-            $soapClient = $this->soapClient->getSoapClient();
-            $userParams = [
-                "userName"         => $user['userid'],
-                "merchantId"       => ConfigManager::getNetent('merchantId'),
-                "merchantPassword" => ConfigManager::getNetent('merchantPassword'),
-                "currencyISOCode"  => $user['currency'],
-                'extra'            => [
-                    "DisplayName",
-                    $user['username']
-                ]
-            ];
-            $loginUserReturn = $soapClient->loginUserDetailed($userParams);
-        } catch (\Exception $error) {
-            error_log("Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
-            $returnFromNetent['status'] = $error;
-            return $returnFromNetent;
+        if ((bool)ConfigManager::getIT('isItalian') === true) {
+            $aamsGameCode = !!($thirdPartyServiceUser['sessionData']['option'] & 1) ? $gameData['aams_game_id_mobile'] : $gameData['aams_game_id_desktop'];
+            if (empty($aamsGameCode)) {
+                error_log('aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                $returnValue['returnCode'] = 0;
+                return $returnValue;
+            }
+            if (empty($gameData['aams_game_type'])) {
+                error_log('aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                $returnValue['returnCode'] = 0;
+                return $returnValue;
+            } else {
+                $aamsGameType = $gameData['aams_game_type'];
+            }
+        } else {
+            $isItalian = false;
+            $aamsGameCode = '';
+            $aamsGameType = '';
         }
-        $returnFromNetent = get_object_vars($loginUserReturn);
-        return end($returnFromNetent);*/
-        $returnValue = ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
-        return end($returnValue);
+        $date = time();
+        Db::getInstance(ConfigManager::getDb('database', true))->beginTransaction();
+        $gameSession = $user->getGameSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
+        return null;
     }
 
 }

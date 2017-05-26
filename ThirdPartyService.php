@@ -102,6 +102,7 @@ class ThirdPartyService
      * @param int|null $campaignId
      * @param int|null $platform
      * @return object IServiceModels
+     * @throws SoapFault
      */
     public function GetWalletedGameURL(int $skinId, int $userId, int $gameId, float $amount, string $language, int $option, string $ip = null, int $campaignId = null, int $platform = null): IServiceModels
     {

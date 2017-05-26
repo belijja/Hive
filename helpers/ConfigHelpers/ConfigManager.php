@@ -17,11 +17,11 @@ class ConfigManager
 {
     private static $firstDb;
     private static $secondDb;
-    private static $thirdPartyServicePartners;
     private static $wsdl;
     private static $ISBets;
     private static $server;
     private static $netent;
+    private static $it;
 
     /**
      * @throws \SoapFault
@@ -38,6 +38,7 @@ class ConfigManager
         self::$ISBets = $config['ISBETS'];
         self::$server = $config['SERVER'];
         self::$netent = $config['NETENT'];
+        self::$it = $config['IT'];
 
     }
 
@@ -69,6 +70,15 @@ class ConfigManager
         } else {
             throw new \SoapFault('INVALID_ARG', "Argument " . $configKey . " doesn't exists in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    public static function getIT(string $key): string
+    {
+        return self::$it[$key];
     }
 
     /**
