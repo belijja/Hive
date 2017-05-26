@@ -34,7 +34,6 @@ class ConfigManager
         }
         self::$firstDb = $config['DATABASE 1'];
         self::$secondDb = $config['DATABASE 2'];
-        self::$thirdPartyServicePartners = $config['THIRD PARTY SERVICE PARTNERS'];
         self::$wsdl = $config['WSDL'];
         self::$ISBets = $config['ISBETS'];
         self::$server = $config['SERVER'];

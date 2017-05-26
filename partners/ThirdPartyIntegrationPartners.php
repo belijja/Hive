@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Partners;
 
-use Configs\ThirdPartyIntegrationConfigs;
+use Configs\SkinConfigs;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 
@@ -82,10 +82,10 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                                                  AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
-                ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
+                ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                 //only for com
                 ':userId'     => $userId,
-                ':partnerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId']
+                ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
                 //only for com
             ]);
             if ($result && $query->rowCount() == 1) {
@@ -107,10 +107,10 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                                                  AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
-                ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
+                ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                 //only for com
                 ':userId'     => $userId,
-                ':partnerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId']
+                ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
                 //only for com
             ]);
         }
@@ -134,16 +134,16 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];
-            $params['providerId'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'];
+            $params['providerId'] = SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'];
             $params['userId'] = $userId;
-            $params['skinId'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['partnerId'];
+            $params['skinId'] = SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
                 $query = $this->db->prepare("SELECT * 
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
                 $query->execute([
-                    ':providerId' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
+                    ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
@@ -157,7 +157,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                         $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                              VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
-                            ':providerId'  => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['providerId'],
+                            ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                             ':agentId'     => $user->agentId,
                             ':affiliateId' => $affiliateId
                         ]);

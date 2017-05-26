@@ -35,7 +35,7 @@ use BackOffice\Core;
 //providers
 use Providers\NetentProvider;
 //configs
-use Configs\ThirdPartyServicePartners;
+use Configs\PartnerConfigs;
 
 /**
  * Class ThirdPartyService
@@ -112,7 +112,7 @@ class ThirdPartyService
             return $response;
         }
         $is_demo = ($option & 2) && $gameId != 0;
-        $providerIdFromConfigFile = (int)ThirdPartyServicePartners::getTpsConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
+        $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {//if it's not demo game
             if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
                 $ISBetsUser = $this->ISBets->checkAndRegisterUser([
@@ -196,25 +196,25 @@ class ThirdPartyService
     }
 }
 
-ConfigManager::parseConfigFile();
+ConfigManager::parseConfigFile();//parsing config file once at the beginning of any api call
 $uri = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
 
-if (isset($_GET['wsdl'])) {
+if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in browser
     $wsdl = new AutoDiscover(new ArrayOfTypeComplex());
     $wsdl->setClass("ThirdPartyService");
     $wsdl->setUri($uri);
     $wsdl->handle();
-} else {
+} else {//if there is no wsdl in url
     $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(), new ThirdPartyIntegrationPartners(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
-    if (!isset($user) || !isset($pass) || ThirdPartyServicePartners::getTpsConfigs($user) == null || ThirdPartyServicePartners::getTpsConfigs($user)['password'] != $pass) {
+    if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check
         header('WWW-Authenticate: Basic realm="ThirdPartyService"');
         header('HTTP/1.0 401 Unauthorized');
         echo 'Unauthorized';
         exit;
     }
-    if (isset($_GET['action'])) {
+    if (isset($_GET['action'])) {//connecting through rest service with post params if there is action param in url
         try {
             switch ($_GET['action']) {
                 case 'GetUserInfo':
@@ -275,7 +275,7 @@ if (isset($_GET['wsdl'])) {
             echo "exception=1&msg=" . rawurlencode($e->getMessage()) . "&code=" . $e->getCode();
             exit;
         }
-    } else {
+    } else {//connecting through soap service with wsdl file
         $file = $thirdPartyService->soapManager->namespaceToWsdlFilename($uri);
         if (!file_exists($file) || filemtime($file) < filemtime(__FILE__)) {
             @mkdir(dirname($file), 0770, true);

@@ -11,9 +11,9 @@ namespace Configs;
 
 use Helpers\ConfigHelpers\ConfigManager;
 
-class ThirdPartyServicePartners
+class PartnerConfigs
 {
-    private static $tpsConfigs = [
+    private static $partnerConfigs = [
         'pw'         => [
             'password'   => 'pwpass',
             'providerId' => 2,
@@ -29,11 +29,11 @@ class ThirdPartyServicePartners
         'misterbet'  => [
             'password'   => 'fuThohg6',
             'providerId' => 1003,
-        ],
+        ]
     ];
 
-    public static function getTpsConfigs($partnerName)
+    public static function getPartnerConfigs($partnerName)
     {
-        return ConfigManager::checkIfArrayExists((string)$partnerName, self::$tpsConfigs);
+        return ConfigManager::checkIfArrayExists((string)$partnerName, self::$partnerConfigs);
     }
 }

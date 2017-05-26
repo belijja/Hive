@@ -9,14 +9,14 @@ declare(strict_types = 1);
 
 namespace Users;
 
-use Configs\ThirdPartyGamesConfigs;
+use Configs\GameProviderConfigs;
 
 class UsersFactory
 {
     public static function getUser(array $thirdPartyServiceUser, string $gameProviderId)
     {
         $user = null;
-        foreach (ThirdPartyGamesConfigs::getTpgConfigs() as $key => $value) {
+        foreach (GameProviderConfigs::getGameProviderConfigs() as $key => $value) {
             if ($gameProviderId == $value['providerId']) {
                 if (is_null($user)) {
                     $user = $thirdPartyServiceUser['provider_id'] == 2 ? new SKSUser($thirdPartyServiceUser, $value) : new TPUser($thirdPartyServiceUser, $value);

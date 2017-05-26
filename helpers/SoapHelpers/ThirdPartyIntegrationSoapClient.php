@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Configs\ThirdPartyIntegrationConfigs;
+use Configs\SkinConfigs;
 
 class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
@@ -60,20 +60,20 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
         return $response;
         /*$params['userId'] = $userId;
         if ($soapClient == null) {
-            if (isset(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['wsdl'])) {
+            if (isset(SkinConfigs::getSkinConfigs($pokerSkinId)['wsdl'])) {
                 $params = [
                     'trace'              => 1,
                     'exceptions'         => 0,
                     'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-                    'connection_timeout' => ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['apiTimeout']
+                    'connection_timeout' => SkinConfigs::getSkinConfigs($pokerSkinId)['apiTimeout']
                 ];
-                if (isset(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['user'])) {
-                    $params['login'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['user'];
-                    $params['password'] = ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['password'];
+                if (isset(SkinConfigs::getSkinConfigs($pokerSkinId)['user'])) {
+                    $params['login'] = SkinConfigs::getSkinConfigs($pokerSkinId)['user'];
+                    $params['password'] = SkinConfigs::getSkinConfigs($pokerSkinId)['password'];
                 }
-                $soapClient = new \SoapClient(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId)['wsdl'], $params);
+                $soapClient = new \SoapClient(SkinConfigs::getSkinConfigs($pokerSkinId)['wsdl'], $params);
             } else {
-                $soapClient = new SoapProxy(ThirdPartyIntegrationConfigs::getTpiConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
+                $soapClient = new SoapProxy(SkinConfigs::getSkinConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
             }
         }
         return $soapClient->UserGetInfo($params);*/
