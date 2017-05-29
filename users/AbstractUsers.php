@@ -63,11 +63,11 @@ class AbstractUsers
         }
         $q .= " ORDER BY ts.seq DESC LIMIT 1";
         $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
-        $query->bindParam(':providerId', $this->config['providerId']);
-        $query->bindParam(':netentSessionId', $netentSessionId);
-        $query->bindParam(':userId', $this->user['userid']);
+        $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
+        $query->bindParam(':netentSessionId', $netentSessionId, \PDO::PARAM_STR);
+        $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
         if (isset($gameId)) {
-            $query->bindParam(':gameId', $gameId);
+            $query->bindParam(':gameId', $gameId, \PDO::PARAM_INT);
         }
         if ($query->execute() && $query->rowCount() > 0) {
             $result = $query->fetch(\PDO::FETCH_ASSOC);
@@ -114,7 +114,7 @@ class AbstractUsers
      * @return null
      */
     public function getGameSession(string $netentSessionId = null, int $gameId, int $date = null)
-    {
+    {//maybe $netentSessionId should be just $sessionId or $externalSessionId because methods from this class will be used by other parts of program
         if (!isset($date)) {
             $date = time();
         }
@@ -207,26 +207,74 @@ class AbstractUsers
                   AND seq = :sequence
                   AND thirdparty_session_id = :sessionId" . ($sequence == 1 ? " AND nrhands = :numberOfHands AND bet = :bet AND rake = :rake" : "");
             $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
-            $query->bindParam(':userId', $this->user['userid']);
-            $query->bindParam(':providerId', $this->config['providerId']);
-            $query->bindParam(':sequence', $sequence);
-            $query->bindParam(':sessionId', $netentSessionId);
+            $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
+            $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
+            $query->bindParam(':sequence', $sequence, \PDO::PARAM_INT);
+            $query->bindParam(':sessionId', $netentSessionId, \PDO::PARAM_STR);
             if ($sequence == 1) {
-                $query->bindParam(':numberOfHands', $numberOfHands);
-                $query->bindParam(':bet', $bet);
-                $query->bindParam(':rake', $rake);
+                $query->bindParam(':numberOfHands', $numberOfHands, \PDO::PARAM_INT);
+                $query->bindParam(':bet', $bet, \PDO::PARAM_INT);
+                $query->bindParam(':rake', $rake, \PDO::PARAM_INT);
             }
-            if ($query->execute() && $query->rowCount() > 1) {
+            if ($query->execute() && $query->rowCount() == 1) {
                 $result = $query->fetch(\PDO::FETCH_ASSOC);//fetching data from thirdparty_sessions if new session can't be added
                 $this->sessionId = $result['id'];
                 $newCashierToken = $result['cashiertoken'];
-                if ($sequence > 1) {
+                if ($sequence == 1) {//change to > 1
                     $newCashierToken = $this->updateThirdPartySession($newCashierToken, $numberOfHands, $amount, $bet, $rake);
                 }
             } else {
                 $this->sessionId = Db::getInstance(ConfigManager::getDb('database', true))->lastInsertId();
                 $newCashierToken = $cashierToken;
             }
+        }
+        return $newCashierToken;
+    }
+
+    public function updateThirdPartySession(string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake)
+    {
+        $newCashierToken = false;
+        if (isset($this->externalSessionId) && $this->sessionStatus >= 20) {
+            return false;
+        }
+        if ($numberOfHands == 0 && $amount == 0 && $bet == 0 && $rake == 0) {
+            return $cashierToken;
+        }
+
+        $q = "UPDATE thirdparty_sessions SET nrhands = nrhands + :numberOfHands, amount = amount + :amount, bet = bet + :bet, rake = rake + :rake, sessionend = NOW() 
+              WHERE uid = :userId 
+              AND thirdparty_provider_id = :providerId 
+              AND cashiertoken = :cashierToken
+              AND DATE(sessionend) = CURDATE() AND status < 20";
+        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        if (!$query->execute([
+                ':numberOfHands' => $numberOfHands,
+                ':amount'        => $amount,
+                ':bet'           => $bet,
+                ':rake'          => $rake,
+                ':userId'        => $this->user['userid'],
+                ':providerId'    => $this->config['providerId'],
+                ':cashierToken'  => $cashierToken
+
+            ]) || $query->rowCount() < 1
+        ) {
+            $q = "SELECT seq, thirdparty_session_id, game_id, status, session_id FROM thirdparty_sessions 
+                  WHERE uid = :userId 
+                  AND thirdparty_provider_id = :providerId 
+                  AND cashiertoken = :cashierToken";
+            Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+            if ($query->execute([
+                    ':userId'       => $this->user['userid'],
+                    ':providerId'   => $this->config['providerId'],
+                    ':cashierToken' => $cashierToken
+                ]) && $query->rowCount() > 1
+            ) {
+                $result = $query->fetch(\PDO::FETCH_ASSOC);
+                $newCashierToken = $this->getNewCashierToken($cashierToken);
+                $newCashierToken = $this->insertThirdPartySession($result['session_id'], $result['status'], $result['thirdparty_session_id'], $result['seq'] + 1, $result['game_id'], $newCashierToken, $numberOfHands, $amount, $bet, $rake, time(), time());
+            }
+        } else {
+            $newCashierToken = $cashierToken;
         }
         return $newCashierToken;
     }
