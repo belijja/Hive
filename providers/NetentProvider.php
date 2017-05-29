@@ -40,11 +40,11 @@ class NetentProvider
      */
     public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null)
     {
-        $sessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
-        if (is_soap_fault($sessionId) || array_key_exists('status', $sessionId)) {
+        $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
+        if (is_soap_fault($netentSessionId) || array_key_exists('status', $netentSessionId)) {
             throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
         }
-        $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $sessionId . ":" . $gameData['game_id']);
+        $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $netentSessionId . ":" . $gameData['game_id']);
         /*if ($sessionDetails['status'] == false) {
             if (is_soap_fault($this->logoutUser($sessionId))) {
                 throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
@@ -58,7 +58,7 @@ class NetentProvider
         }*/
     }
 
-    private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $sessionId = null)
+    private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null)
     {
         $returnValue = [];
         $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
@@ -67,12 +67,12 @@ class NetentProvider
             $returnValue['returnCode'] = -3;
             return $returnValue;
         }
-        if (isset($sessionId)) {
-            $cashierToken = $user->getCashierTokenFromSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
+        if (isset($netentSessionId)) {
+            /*$cashierToken = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
             if (array_key_exists('cashiertoken', $cashierToken)) {
                 $returnValue['status'] = false;
                 return $returnValue;
-            }
+            }*///un comment this part when method is done because this part will exit the method because there is a cashierToken returned from function
         }
         if ((bool)ConfigManager::getIT('isItalian') === true) {
             $aamsGameCode = !!($thirdPartyServiceUser['sessionData']['option'] & 1) ? $gameData['aams_game_id_mobile'] : $gameData['aams_game_id_desktop'];
@@ -95,7 +95,7 @@ class NetentProvider
         }
         $date = time();
         Db::getInstance(ConfigManager::getDb('database', true))->beginTransaction();
-        $gameSession = $user->getGameSession($sessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
+        $gameSession = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
         return null;
     }
 
