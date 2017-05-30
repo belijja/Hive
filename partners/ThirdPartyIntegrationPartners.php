@@ -30,12 +30,12 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
 
     /**
      * @param array $arrayOfParams
-     * @return array
+     * @return void
+     * @throws \SoapFault
      */
-    public function checkAndRegisterUser(array $arrayOfParams): array
+    public function checkAndRegisterUser(array $arrayOfParams): void
     {
         @list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
-        $returnData = [];
         $query = $this->db->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
                                              WHERE provider_id = :providerId 
@@ -45,18 +45,10 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                 ':providerSkinId' => $skinId
             ]) || $query->rowCount() != 1
         ) {//if query fails or there is no returned rows from db
-            $returnData['status'] = false;
-            return $returnData;
+            throw new \SoapFault('DB_ERROR', 'Query failed.');
         } else {
             $result = $query->fetch(\PDO::FETCH_OBJ);
-            $userStatus = $this->checkAndRegisterThirdPartyIntegrationUser($userId, (int)$result->poker_skinid, $soapClient);
-            if ($userStatus['status'] == false) {
-                $returnData['status'] = false;
-                return $returnData;
-            } else {
-                $returnData['status'] = true;
-                return $returnData;
-            }
+            $this->checkAndRegisterThirdPartyIntegrationUser($userId, (int)$result->poker_skinid, $soapClient);
         }
     }
 
@@ -66,6 +58,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
      * @param \SoapClient|null $soapClient
      * @param string|null $userDate
      * @return array
+     * @throws \SoapFault
      */
     public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
     {
@@ -105,18 +98,17 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                                                  WHERE c.provider_id = :providerId 
                                                  AND c.casino_id = :userId 
                                                  AND c.skin_id = :partnerId");
-            $result = $query->execute([
+            if (!$query->execute([
                 ':userDate'   => $userDate,
                 ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                 //only for com
                 ':userId'     => $userId,
                 ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
                 //only for com
-            ]);
-        }
-        if (!$result) {
-            $returnData['status'] = false;
-            return $returnData;
+            ])
+            ) {
+                //throw new \SoapFault('DB_ERROR', 'Query failed.');
+            }
         }
         if ($query->rowCount() > 0 && $returnData['status'] === true) {
             $result = $query->fetch(\PDO::FETCH_OBJ);
@@ -129,8 +121,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
         if ($query->rowCount() == 0 || $needUpdate) {
             $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient);
             /*if (is_soap_fault($legacyUserInfo) || $legacyUserInfo->UserGetInfoResult->resultCode != 1) {
-                $returnData['status'] = false;
-                return $returnData;
+                throw new \SoapFault('COMMUNICATION_ERROR', 'Error connecting to third party user endpoint.');
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];

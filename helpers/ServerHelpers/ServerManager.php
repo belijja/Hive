@@ -34,7 +34,6 @@ class ServerManager
      * @param array $postParams
      * @param null $url
      * @return array
-     * @throws \SoapFault
      */
     public function callExternalMethod(string $functionName, array $postParams, $url = null): array
     {
@@ -49,8 +48,8 @@ class ServerManager
     /**
      * @param string $url
      * @param string $encodedString
-     * @return array
      * @throws \SoapFault
+     * @return array
      */
     private function sendPostParams(string $url, string $encodedString): array
     {
@@ -63,8 +62,8 @@ class ServerManager
             CURLOPT_RETURNTRANSFER => true,
         ];
         curl_setopt_array($channel, $options);
-        $response = curl_exec($channel);
-        /*if(!$response) {
+        /*$response = curl_exec($channel);
+        if(!$response) {
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to poker server and inserting/updating info about user.');
         }*/
         $response = 'status=1&pokerId=32';

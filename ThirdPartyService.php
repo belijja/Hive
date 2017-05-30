@@ -115,26 +115,20 @@ class ThirdPartyService
         $is_demo = ($option & 2) && $gameId != 0;
         $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {//if it's not demo game
-            if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
-                try {
+            try {
+                if ($providerIdFromConfigFile === 3) {//registering if it's SKS user
                     $this->ISBets->checkAndRegisterUser([
                         $userId,
                         $skinId
                     ]);
-                } catch (\SoapFault $soapFault) {
-                    $response->resultCode = -3;//user not found
-                    return $response;
+                } else {//registering if it's third party user
+                    $this->thirdPartyIntegration->checkAndRegisterUser([
+                        $userId,
+                        $skinId,
+                        $providerIdFromConfigFile
+                    ]);
                 }
-                /*if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
-                    $response->resultCode = -3;//user not found
-                    return $response;
-                }*/
-            } else if ($this->thirdPartyIntegration->checkAndRegisterUser([//registering if it's third party user
-                    $userId,
-                    $skinId,
-                    $providerIdFromConfigFile
-                ])['status'] == false
-            ) {
+            } catch (\SoapFault $soapFault) {
                 $response->resultCode = -3;//user not found
                 return $response;
             }
@@ -171,14 +165,14 @@ class ThirdPartyService
                 'userId'    => $userId
             ];
             $thirdPartyServiceUser['sessionData'] = [
-                'userId'           => $thirdPartyServiceUser['userid'],
-                'ip'               => $ip,
-                'option'           => $option,
-                'isDemo'           => false,
-                'gameId'           => $gameId,
+                'userId' => $thirdPartyServiceUser['userid'],
+                'ip' => $ip,
+                'option' => $option,
+                'isDemo' => false,
+                'gameId' => $gameId,
                 'currentTimestamp' => time(),
-                'age'              => 0,
-                'amount'           => $amountInCents
+                'age' => 0,
+                'amount' => $amountInCents
             ];
             $gameData = $this->core->getGameShortData($gameId);//fetching info about the game from back office
             if (array_key_exists('status', $gameData) || empty($gameData['provider_id']) || empty($gameData['game_id'])) {

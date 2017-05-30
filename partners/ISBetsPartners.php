@@ -28,13 +28,12 @@ class ISBetsPartners extends AbstractPartners
 
     /**
      * @param array $arrayOfParams
-     * @return array
      * @throws \SoapFault
      */
-    public function checkAndRegisterUser(array $arrayOfParams): array
+    public function checkAndRegisterUser(array $arrayOfParams): void
     {
         @list($userId, $skinId, $soapClient) = $arrayOfParams;
-        $returnData = [];//initializing return array variable
+        //$returnData = [];//initializing return array variable
         $userDetails = null;//initializing variable for fetching user from db
         $query = $this->db->prepare("SELECT c.extern_username, 
                                              datediff(now(), ud.updatetime) AS updatediff, 
@@ -55,10 +54,6 @@ class ISBetsPartners extends AbstractPartners
         }
         if ($query->rowCount() > 0) {
             $userDetails = $query->fetch(\PDO::FETCH_OBJ);
-            $returnData = [
-                'status'  => 1,
-                'pokerId' => $userDetails->userid
-            ];
         }
         if ($query->rowCount() == 0 || $userDetails->updatediff > 14 || $userDetails->isFirst) {
             $ISBetsUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $soapClient);
@@ -108,13 +103,13 @@ class ISBetsPartners extends AbstractPartners
                     throw new \SoapFault('INVALID_ARG', 'Currency code has changed.');
                 }
                 if ($params['username'] == $userDetails->username && $params['email'] == $userDetails->email && $params['firstName'] == $userDetails->firstname && $params['lastName'] == $userDetails->lastname && $params['city'] == $userDetails->city && $params['street'] == $userDetails->street && $params['state'] == $userDetails->state && $params['zip'] == $userDetails->zip && $params['dateOfBirth'] == $userDetails->dob && $params['phone'] == $userDetails->phone && $params['country'] == $userDetails->country && $params['externalUsername'] == $userDetails->extern_username && !$userDetails['isFirst']) {
-                    return $returnData;
+                    return;
                 }
                 $functionName = 'UpdatePokerPlayer';
             }
-            return $this->serverManager->callExternalMethod($functionName, $params);
+            $this->serverManager->callExternalMethod($functionName, $params);
         }
-        return $returnData;
+        return;
     }
 
     /**

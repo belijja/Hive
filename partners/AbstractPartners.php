@@ -34,7 +34,7 @@ abstract class AbstractPartners
 
     /**
      * @param array $arrayOfParams
-     * @return array
+     * @return void
      */
-    public abstract function checkAndRegisterUser(array $arrayOfParams): array;
+    public abstract function checkAndRegisterUser(array $arrayOfParams): void;
 }
