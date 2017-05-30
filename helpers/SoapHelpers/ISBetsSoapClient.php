@@ -13,6 +13,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 
 class ISBetsSoapClient implements ISoapClient
 {
+
     public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
     \stdClass
     {
@@ -54,6 +55,7 @@ class ISBetsSoapClient implements ISoapClient
         $response->GetUserInfoResult->_UserInfo->Zip = '324324';
         $response->GetUserInfoResult->_UserID = 32;
         $response->GetUserInfoResult->_FatherID = 3;
+        return $response;
         /*$params = $this->initISBetsParams($skinId);
         $params['_UserID'] = $userId;
         if ($soapClient == null) {
@@ -65,7 +67,7 @@ class ISBetsSoapClient implements ISoapClient
             $response->GetUserInfoResult->_FatherID = (int)$response->GetUserInfoResult->_UserInfo->FatherID;
         } else {
             error_log('PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($params, true));
-        }*/
+        }
         return $response;
     }
 
@@ -92,7 +94,7 @@ class ISBetsSoapClient implements ISoapClient
             '_APIPassword' => $apiPass,
             '_IDBookmaker' => $skinId
         ];
-        return $params;
+        return $params;*/
     }
 
 }

@@ -20,9 +20,4 @@ class SKSUser extends AbstractUsers
     {
         parent::__construct($user, $config);
     }
-
-    public function userNewTransactionOk()
-    {
-        return !($this->user['rights'] & 0x08000000);
-    }
 }

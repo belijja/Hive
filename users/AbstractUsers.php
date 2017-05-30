@@ -118,6 +118,7 @@ class AbstractUsers
         if (!isset($date)) {
             $date = time();
         }
+        throw new \Exception('Something is wrong.');
         return $this->insertThirdPartySession(0, $netentSessionId, 1, $gameId, $this->getNewCashierToken(), 0, 0, 0, 0, $date, $date);
     }
 
@@ -176,7 +177,6 @@ class AbstractUsers
     public function insertThirdPartySession(int $status, string $netentSessionId, int $sequence, int $gameId, string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake, int $startDate, int $endDate, string $sessionId = null): string
     {
         $newCashierToken = false;
-
         if (!isset($netentSessionId)) {
             $netentSessionId = hash("sha256", $cashierToken);
         }
@@ -233,9 +233,11 @@ class AbstractUsers
 
     public function updateThirdPartySession(string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake)
     {
+        $returnValue = [];
         $newCashierToken = false;
         if (isset($this->externalSessionId) && $this->sessionStatus >= 20) {
-            return false;
+            $returnValue['status'] = false;
+            return $returnValue;
         }
         if ($numberOfHands == 0 && $amount == 0 && $bet == 0 && $rake == 0) {
             return $cashierToken;
@@ -277,5 +279,13 @@ class AbstractUsers
             $newCashierToken = $cashierToken;
         }
         return $newCashierToken;
+    }
+
+    /**
+     * @return bool
+     */
+    public function userNewTransactionOk()
+    {
+        return !($this->user['rights'] & 0x08000000);
     }
 }

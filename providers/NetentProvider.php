@@ -12,6 +12,7 @@ namespace Providers;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
+use Users\SKSUser;
 use Users\UsersFactory;
 
 class NetentProvider
@@ -42,7 +43,7 @@ class NetentProvider
     {
         $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
         if (is_soap_fault($netentSessionId) || array_key_exists('status', $netentSessionId)) {
-            throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
+            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }
         $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $netentSessionId . ":" . $gameData['game_id']);
         /*if ($sessionDetails['status'] == false) {
@@ -58,6 +59,16 @@ class NetentProvider
         }*/
     }
 
+    /**
+     * @param array $thirdPartyServiceUser
+     * @param array $gameData
+     * @param int $amountInCents
+     * @param string|null $ip
+     * @param int|null $platform
+     * @param int|null $campaignId
+     * @param string|null $netentSessionId
+     * @return array|null
+     */
     private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null)
     {
         $returnValue = [];
@@ -95,7 +106,12 @@ class NetentProvider
         }
         $date = time();
         Db::getInstance(ConfigManager::getDb('database', true))->beginTransaction();
-        $gameSession = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
+        try {
+            $gameSession = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
+        } catch (\Exception $e) {
+            echo $e->getMessage();
+        }
+
         return null;
     }
 

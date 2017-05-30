@@ -63,15 +63,17 @@ class ServerManager
             CURLOPT_RETURNTRANSFER => true,
         ];
         curl_setopt_array($channel, $options);
-        /*$response = curl_exec($channel);
-        if(!$response) {
-            $response['status'] = false;
-            return $response;
+        $response = curl_exec($channel);
+        /*if(!$response) {
+            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to poker server and inserting/updating info about user.');
         }*/
         $response = 'status=1&pokerId=32';
         curl_close($channel);
         $result = [];
         parse_str($response, $result);
+        if ($result['status'] != 1) {
+            throw new \SoapFault('INVALID_ARG', 'Wrong status returned from poker server when inserting or updating user info.');
+        }
         return $result;
     }
 
@@ -85,13 +87,13 @@ class ServerManager
         if (!isset($this->postParamsMaxLengths) || !isset($this->postParamsMaxLengths[$functionName])) {
             return $postParams;
         }
-        $return = [];
+        $returnPostParams = [];
         foreach ($postParams as $k => $v) {
             if (!isset($this->postParamsMaxLengths[$functionName][$k]) || strlen((string)$v) <= $this->postParamsMaxLengths[$functionName][$k]) {
-                $return[$k] = $v;
+                $returnPostParams[$k] = $v;
             }
         }
-        return $return;
+        return $returnPostParams;
     }
 
 }

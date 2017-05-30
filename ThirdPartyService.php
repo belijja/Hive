@@ -116,14 +116,19 @@ class ThirdPartyService
         $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
         if (!$is_demo) {//if it's not demo game
             if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
-                $ISBetsUser = $this->ISBets->checkAndRegisterUser([
-                    $userId,
-                    $skinId
-                ]);
-                if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
+                try {
+                    $this->ISBets->checkAndRegisterUser([
+                        $userId,
+                        $skinId
+                    ]);
+                } catch (\SoapFault $soapFault) {
                     $response->resultCode = -3;//user not found
                     return $response;
                 }
+                /*if ($ISBetsUser['status'] == false || $ISBetsUser['status'] != 1) {
+                    $response->resultCode = -3;//user not found
+                    return $response;
+                }*/
             } else if ($this->thirdPartyIntegration->checkAndRegisterUser([//registering if it's third party user
                     $userId,
                     $skinId,
