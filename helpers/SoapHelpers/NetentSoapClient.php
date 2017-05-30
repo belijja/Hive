@@ -19,7 +19,7 @@ class NetentSoapClient
      */
     public function loginUser(array $user): array
     {
-        /*$returnFromNetent = [];
+        $returnFromNetent = [];
         try {
             $soapClient = $this->getSoapClient();
             $userParams = [
@@ -39,9 +39,9 @@ class NetentSoapClient
             return $returnFromNetent;
         }
         $returnFromNetent = get_object_vars($loginUserReturn);
-        return $returnFromNetent;*/
-        $returnValue = ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
-        return $returnValue;
+        return $returnFromNetent;
+        /*$returnValue = ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
+        return $returnValue;*/
     }
 
     public function getSoapClient()

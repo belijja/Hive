@@ -64,14 +64,14 @@ class ServerManager
         curl_setopt_array($channel, $options);
         /*$response = curl_exec($channel);
         if(!$response) {
-            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to poker server and inserting/updating info about user.');
+            throw new \SoapFault('-3', 'Error connecting to poker server and inserting/updating info about user.');
         }*/
-        $response = 'status=1&pokerId=32';
+        $response = 'status=1&pokerId=32';//delete this line on prod
         curl_close($channel);
         $result = [];
         parse_str($response, $result);
         if ($result['status'] != 1) {
-            throw new \SoapFault('INVALID_ARG', 'Wrong status returned from poker server when inserting or updating user info.');
+            throw new \SoapFault('-3', 'Wrong status returned from poker server when inserting or updating user info.');
         }
         return $result;
     }

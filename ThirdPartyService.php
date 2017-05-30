@@ -106,17 +106,17 @@ class ThirdPartyService
      */
     public function GetWalletedGameURL(int $skinId, int $userId, int $gameId, float $amount, string $language, int $option, string $ip = null, int $campaignId = null, int $platform = null): IServiceModels
     {
-        $response = new WalletedGameURL();
-        $amountInCents = (int)number_format($amount * 100, 0, '.', '');
-        if ($amountInCents === false || $amountInCents < 0) {
-            $response->resultCode = 0;//unspecified error
-            return $response;
-        }
-        $is_demo = ($option & 2) && $gameId != 0;
-        $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
-        if (!$is_demo) {//if it's not demo game
-            try {
-                if ($providerIdFromConfigFile === 3) {//registering if it's SKS user
+        try {
+            $response = new WalletedGameURL();
+            $amountInCents = (int)number_format($amount * 100, 0, '.', '');
+            if ($amountInCents === false || $amountInCents < 0) {
+                $response->resultCode = 0;//unspecified error
+                return $response;
+            }
+            $is_demo = ($option & 2) && $gameId != 0;
+            $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
+            if (!$is_demo) {//if it's not demo game
+                if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
                     $this->ISBets->checkAndRegisterUser([
                         $userId,
                         $skinId
@@ -128,71 +128,71 @@ class ThirdPartyService
                         $providerIdFromConfigFile
                     ]);
                 }
-            } catch (\SoapFault $soapFault) {
-                $response->resultCode = -3;//user not found
-                return $response;
+                $thirdPartyServiceUser = $this->serviceUsers->getUserData([//get data about the user
+                    $providerIdFromConfigFile,
+                    $skinId,
+                    $userId
+                ]);
+            } else {//if it's a demo game
+                $thirdPartyServiceUser = [];
+                $thirdPartyServiceUser['userId'] = -1;
+                $thirdPartyServiceUser['currency'] = 'EUR';
+                $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
+                $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
             }
-            $thirdPartyServiceUser = $this->serviceUsers->getUserData([//get data about the user
-                $providerIdFromConfigFile,
-                $skinId,
-                $userId
-            ]);
-            if (array_key_exists('status', $thirdPartyServiceUser)) {
-                $response->resultCode = -3;//user not found
-                return $response;
-            } else if ($thirdPartyServiceUser['rights'] & 0x08000000) {
-                $response->resultCode = -4;//player blocked for API
-                return $response;
-            }
-        } else {//if it's a demo game
-            $thirdPartyServiceUser = [];
-            $thirdPartyServiceUser['userId'] = -1;
-            $thirdPartyServiceUser['currency'] = 'EUR';
-            $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
-            $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
-        }
-        $sessionId = $this->sessionManager->startSessionAndGetSessionId();//starting session and getting session id
-        if ($gameId != 0) {
-            $params = [
-                'partnerId' => $thirdPartyServiceUser['skinid'],
-                'gameId'    => $gameId,
-                'currency'  => is_null($campaignId) ? $thirdPartyServiceUser['currency'] : 'FUN',
-                'token'     => $sessionId,
-                //session id becomes token
-                'language'  => $language,
-                'mobile'    => !!($option & 1),
-                'demo'      => !!($option & 2),
-                'userId'    => $userId
-            ];
-            $thirdPartyServiceUser['sessionData'] = [
-                'userId' => $thirdPartyServiceUser['userid'],
-                'ip' => $ip,
-                'option' => $option,
-                'isDemo' => false,
-                'gameId' => $gameId,
-                'currentTimestamp' => time(),
-                'age' => 0,
-                'amount' => $amountInCents
-            ];
-            $gameData = $this->core->getGameShortData($gameId);//fetching info about the game from back office
-            if (array_key_exists('status', $gameData) || empty($gameData['provider_id']) || empty($gameData['game_id'])) {
-                throw new \SoapFault('INVALID GAME ID', 'Invalid game ID passed');
-            }
-            if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
-                if (!$is_demo) {//if it's not a demo game
-                    $params['sessionId'] = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
-                } else {//if it is a demo game
-                    $params['sessionId'] = 'DEMO-' . rand(100000, 999999);
+            $sessionId = $this->sessionManager->startSessionAndGetSessionId();//starting session and getting session id
+            if ($gameId != 0) {
+                $params = [
+                    'partnerId' => $thirdPartyServiceUser['skinid'],
+                    'gameId'    => $gameId,
+                    'currency'  => is_null($campaignId) ? $thirdPartyServiceUser['currency'] : 'FUN',
+                    'token'     => $sessionId,
+                    //session id becomes token
+                    'language'  => $language,
+                    'mobile'    => !!($option & 1),
+                    'demo'      => !!($option & 2),
+                    'userId'    => $userId
+                ];
+                $thirdPartyServiceUser['sessionData'] = [
+                    'userId'           => $thirdPartyServiceUser['userid'],
+                    'ip'               => $ip,
+                    'option'           => $option,
+                    'isDemo'           => false,
+                    'gameId'           => $gameId,
+                    'currentTimestamp' => time(),
+                    'age'              => 0,
+                    'amount'           => $amountInCents
+                ];
+                $gameData = $this->core->getGameShortData($gameId);//fetching info about the game from back office
+                if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
+                    if (!$is_demo) {//if it's not a demo game
+                        $params['sessionId'] = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
+                    } else {//if it is a demo game
+                        $params['sessionId'] = 'DEMO-' . rand(100000, 999999);
+                    }
                 }
             }
-        }
 
-        $response->resultCode = 3233;
-        $response->url = "httkedlfsdkgsgjdsgkjsdkgskjsd";
-        $response->sessionId = "hg54345g34jg534";
-        $response->walletSessionId = "fs87df67sd86g87sd6";
-        $response->walletTicketId = "87sdf6sd087gfs6";
-        return $response;
+            $response->resultCode = 3233;
+            $response->url = "httkedlfsdkgsgjdsgkjsdkgskjsd";
+            $response->sessionId = "hg54345g34jg534";
+            $response->walletSessionId = "fs87df67sd86g87sd6";
+            $response->walletTicketId = "87sdf6sd087gfs6";
+            return $response;
+        } catch (\SoapFault $soapFault) {
+            switch ($soapFault->faultcode) {
+                case '-1':
+                    $response->resultCode = -1;//invaid game ID
+                break;
+                case '-3':
+                    $response->resultCode = -3;//user not found
+                break;
+                case '-4':
+                    $response->resultCode = -4;//player blocked for API
+                break;
+            }
+            return $response;
+        }
     }
 }
 

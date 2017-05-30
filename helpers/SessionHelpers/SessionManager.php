@@ -14,7 +14,7 @@ class SessionManager
     /**
      * @return string
      */
-    public function startSessionAndGetSessionId()
+    public function startSessionAndGetSessionId(): string
     {
         @session_destroy();
         ini_set("session.use_cookies", '0');

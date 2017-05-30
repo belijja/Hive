@@ -45,7 +45,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                 ':providerSkinId' => $skinId
             ]) || $query->rowCount() != 1
         ) {//if query fails or there is no returned rows from db
-            throw new \SoapFault('DB_ERROR', 'Query failed.');
+            throw new \SoapFault('-3', 'Query failed.');
         } else {
             $result = $query->fetch(\PDO::FETCH_OBJ);
             $this->checkAndRegisterThirdPartyIntegrationUser($userId, (int)$result->poker_skinid, $soapClient);
@@ -107,7 +107,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                 //only for com
             ])
             ) {
-                //throw new \SoapFault('DB_ERROR', 'Query failed.');
+                throw new \SoapFault('-3', 'Query failed.');
             }
         }
         if ($query->rowCount() > 0 && $returnData['status'] === true) {
@@ -121,7 +121,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
         if ($query->rowCount() == 0 || $needUpdate) {
             $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient);
             /*if (is_soap_fault($legacyUserInfo) || $legacyUserInfo->UserGetInfoResult->resultCode != 1) {
-                throw new \SoapFault('COMMUNICATION_ERROR', 'Error connecting to third party user endpoint.');
+                throw new \SoapFault('-3', 'Error connecting to third party user endpoint.');
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];

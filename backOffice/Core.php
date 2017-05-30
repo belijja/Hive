@@ -24,11 +24,14 @@ class Core extends AbstractBackOffice
         $result = $query->execute([
             'gameId' => $gameId
         ]);
-        if ($result && $query->rowCount() > 0) {
-            $gameShortData = $query->fetch(\PDO::FETCH_ASSOC);
+        if (!$result || $query->rowCount() < 1) {
+            throw new \SoapFault('-1', 'Invalid game ID passed.');
         } else {
-            $gameShortData['status'] = false;
+            $gameShortData = $query->fetch(\PDO::FETCH_ASSOC);
+            if (empty($gameShortData['provider_id']) || empty($gameShortData['game_id'])) {
+                throw new \SoapFault('-1', 'Invalid game ID passed.');
+            }
+            return $gameShortData;
         }
-        return $gameShortData;
     }
 }

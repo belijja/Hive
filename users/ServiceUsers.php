@@ -21,11 +21,11 @@ class ServiceUsers
     /**
      * @param array $params
      * @return array
+     * @throws \SoapFault
      */
     public function getUserData(array $params): array
     {
         list($providerId, $skinId, $userId) = $params;
-        $returnData = [];
         $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
                                                           GREATEST(f.level, f.retained_level) AS level, 
                                                           f.amount AS fpp_amount, 
@@ -47,9 +47,12 @@ class ServiceUsers
                 ':userId'     => $userId
             ]) || $query->rowCount() != 1
         ) {
-            $returnData['status'] = false;
+            throw new \SoapFault('-3', 'Query failed.');
         } else {
             $returnData = $query->fetch(\PDO::FETCH_ASSOC);
+            if ($returnData['rights'] & 0x08000000) {
+                throw new \SoapFault('-4', 'Access denied for user id ' . $returnData['casino_id']);
+            }
         }
         return $returnData;
     }

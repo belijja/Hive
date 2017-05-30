@@ -41,7 +41,7 @@ class NetentProvider
      */
     public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null)
     {
-        $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
+        $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);//continue here
         if (is_soap_fault($netentSessionId) || array_key_exists('status', $netentSessionId)) {
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }
