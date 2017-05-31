@@ -15,12 +15,12 @@ class NetentSoapClient
 {
     /**
      * @param array $user
-     * @return array
+     * @return string
+     * @throws \SoapFault
      */
-    public function loginUser(array $user): array
+    public function loginUser(array $user): string
     {
-        $returnFromNetent = [];
-        try {
+        /*try {
             $soapClient = $this->getSoapClient();
             $userParams = [
                 "userName"         => $user['userid'],
@@ -35,15 +35,39 @@ class NetentSoapClient
             $loginUserReturn = $soapClient->loginUserDetailed($userParams);
         } catch (\Exception $error) {
             error_log("Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
-            $returnFromNetent['status'] = $error;
-            return $returnFromNetent;
+            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }
         $returnFromNetent = get_object_vars($loginUserReturn);
-        return $returnFromNetent;
-        /*$returnValue = ['loginUserDetailedReturn' => '1495447379571-1-S0B6WU2ZOK3S7'];
-        return $returnValue;*/
+        return end($returnFromNetent);*/
+        $returnValue = '1495447379571-1-S0B6WU2ZOK3S7';
+        return $returnValue;
     }
 
+    /**
+     * @param $netentSessionId
+     * @throws \SoapFault
+     * @return void
+     */
+    public function logoutUser($netentSessionId): void
+    {
+        /*try {
+            $soapClient = $this->getSoapClient();
+            $params = [
+                'sessionId' => $netentSessionId,
+                'merchantId'       => ConfigManager::getNetent('merchantId'),
+                'merchantPassword' => ConfigManager::getNetent('merchantPassword')
+            ];
+            $soapClient->logoutUser($params);
+        } catch (\Exception $error) {
+            error_log("Netent logout failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
+            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
+        }*/
+        return;
+    }
+
+    /**
+     * @return \SoapClient
+     */
     public function getSoapClient()
     {
         return new \SoapClient(ConfigManager::getNetent('apiLocation'), [

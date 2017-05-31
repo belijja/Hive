@@ -39,24 +39,18 @@ class NetentProvider
      * @return string
      * @throws \SoapFault
      */
-    public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null)
+    public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null): string
     {
-        $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);//continue here
-        if (is_soap_fault($netentSessionId) || array_key_exists('status', $netentSessionId)) {
-            throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
-        }
+        $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
         $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $netentSessionId . ":" . $gameData['game_id']);
-        /*if ($sessionDetails['status'] == false) {
-            if (is_soap_fault($this->logoutUser($sessionId))) {
-                throw new \SoapFault('INTERNAL_ERROR', 'Error connecting to Netent server!');
-            }
+        if ($sessionDetails == false) {
+            $this->netentSoapClient->logoutUser($netentSessionId);
             $this->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
         }
         if ($sessionDetails['returnCode'] != 1) {
-            return null;//change return values
-        } else {
-            return null;//change return values
-        }*/
+            throw new \SoapFault($sessionDetails['returnCode'], 'Return code from createSession method.');
+        }
+        return $netentSessionId;
     }
 
     /**
@@ -67,35 +61,28 @@ class NetentProvider
      * @param int|null $platform
      * @param int|null $campaignId
      * @param string|null $netentSessionId
-     * @return array|null
+     * @return null
+     * @throws \SoapFault
      */
     private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null)
     {
         $returnValue = [];
         $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
-        if (is_null($user)) {
-            error_log('Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
-            $returnValue['returnCode'] = -3;
-            return $returnValue;
-        }
-        if (isset($netentSessionId)) {
-            /*$cashierToken = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
-            if (array_key_exists('cashiertoken', $cashierToken)) {
-                $returnValue['status'] = false;
-                return $returnValue;
-            }*///un comment this part when method is done because this part will exit the method because there is a cashierToken returned from function
-        }
+        /*if (isset($netentSessionId)) {
+            $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
+            if ($isCashierTokenSet) {
+                return false;
+            }//uncomment this part when method is done because this part will exit the method because there is a cashierToken returned from function
+        }*/
         if ((bool)ConfigManager::getIT('isItalian') === true) {
             $aamsGameCode = !!($thirdPartyServiceUser['sessionData']['option'] & 1) ? $gameData['aams_game_id_mobile'] : $gameData['aams_game_id_desktop'];
             if (empty($aamsGameCode)) {
                 error_log('aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
-                $returnValue['returnCode'] = 0;
-                return $returnValue;
+                throw new \SoapFault('0', 'Unspecified error.');
             }
             if (empty($gameData['aams_game_type'])) {
                 error_log('aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
-                $returnValue['returnCode'] = 0;
-                return $returnValue;
+                throw new \SoapFault('0', 'Unspecified error.');
             } else {
                 $aamsGameType = $gameData['aams_game_type'];
             }
@@ -107,12 +94,21 @@ class NetentProvider
         $date = time();
         Db::getInstance(ConfigManager::getDb('database', true))->beginTransaction();
         try {
-            $gameSession = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
-        } catch (\Exception $e) {
-            echo $e->getMessage();
+            $cashierToken = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
+            $qOne = "UPDATE thirdparty_sessions SET session_id = :sessionId WHERE id = :sessionId";
+            $qTwo = "INSERT INTO tp_open_sessions (session_id) VALUES (:sessionId)";
+            $queryOne = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qOne);
+            $queryTwo = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qTwo);
+            if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([':sessionId' => $user->sessionId])) {
+                Db::getInstance(ConfigManager::getDb('database', true))->commit();
+            }
+        } catch (\SoapFault $soapFault) {
+            Db::getInstance(ConfigManager::getDb('database', true))->rollBack();
+            error_log("Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+            throw new \SoapFault('0', 'Unspecified error.');
         }
 
-        return null;
+        return 32;
     }
 
 }

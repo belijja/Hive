@@ -17,7 +17,7 @@ class AbstractUsers
     protected $user;
     protected $config;
 
-    protected $sessionId;
+    public $sessionId;
     protected $cashierToken;
     protected $active;
     protected $externalSessionId;
@@ -44,9 +44,9 @@ class AbstractUsers
      * @param string $netentSessionId
      * @param int|null $gameId
      * @param bool|null $isActive
-     * @return array
+     * @return bool
      */
-    public function getCashierTokenFromSession(string $netentSessionId, int $gameId = null, bool $isActive = null): array
+    public function getCashierTokenFromSession(string $netentSessionId, int $gameId = null, bool $isActive = null): bool
     {
         $q = "SELECT ts.id, ts.session_id, ts.seq, ts.cashiertoken, (p.active AND g.active) AS active, ts.status, 
               g.internal_game_id, g.aams_game_id_desktop, g.aams_game_id_mobile, g.game_name, 
@@ -87,16 +87,15 @@ class AbstractUsers
                 $this->gameCode = $result['aams_game_id_mobile'];
             }
             if (isset($this->externalSessionState) && $this->externalSessionState < 2) {
-                $result['returnValue'] = false;
+                return false;
             }
             if ($isActive && !$this->newTransactionOk()) {
-                $result['returnValue'] = false;
+                return false;
             }
-            return $result;
+            return true;
         } else {
-            $result['returnValue'] = false;
+            return false;
         }
-        return $result;
     }
 
     /**
@@ -114,11 +113,10 @@ class AbstractUsers
      * @return null
      */
     public function getGameSession(string $netentSessionId = null, int $gameId, int $date = null)
-    {//maybe $netentSessionId should be just $sessionId or $externalSessionId because methods from this class will be used by other parts of program
+    {
         if (!isset($date)) {
             $date = time();
         }
-        throw new \Exception('Something is wrong.');
         return $this->insertThirdPartySession(0, $netentSessionId, 1, $gameId, $this->getNewCashierToken(), 0, 0, 0, 0, $date, $date);
     }
 
@@ -154,7 +152,7 @@ class AbstractUsers
      * @param string $oldCashierToken
      * @return bool
      */
-    private function isCashierTokenTyped(string $oldCashierToken)
+    private function isCashierTokenTyped(string $oldCashierToken): bool
     {
         return $oldCashierToken[0] == 'M' || $oldCashierToken[0] == 'X';
     }
@@ -220,7 +218,7 @@ class AbstractUsers
                 $result = $query->fetch(\PDO::FETCH_ASSOC);//fetching data from thirdparty_sessions if new session can't be added
                 $this->sessionId = $result['id'];
                 $newCashierToken = $result['cashiertoken'];
-                if ($sequence == 1) {//change to > 1
+                if ($sequence > 1) {//change to > 1
                     $newCashierToken = $this->updateThirdPartySession($newCashierToken, $numberOfHands, $amount, $bet, $rake);
                 }
             } else {
@@ -231,13 +229,20 @@ class AbstractUsers
         return $newCashierToken;
     }
 
-    public function updateThirdPartySession(string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake)
+    /**
+     * @param string $cashierToken
+     * @param int $numberOfHands
+     * @param int $amount
+     * @param int $bet
+     * @param int $rake
+     * @return string
+     * @throws \SoapFault
+     */
+    public function updateThirdPartySession(string $cashierToken, int $numberOfHands, int $amount, int $bet, int $rake): string
     {
-        $returnValue = [];
         $newCashierToken = false;
         if (isset($this->externalSessionId) && $this->sessionStatus >= 20) {
-            $returnValue['status'] = false;
-            return $returnValue;
+            throw new \SoapFault('SESSION_ERROR', 'External session status is equal or bigger then 20!');
         }
         if ($numberOfHands == 0 && $amount == 0 && $bet == 0 && $rake == 0) {
             return $cashierToken;
@@ -264,16 +269,16 @@ class AbstractUsers
                   WHERE uid = :userId 
                   AND thirdparty_provider_id = :providerId 
                   AND cashiertoken = :cashierToken";
-            Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
             if ($query->execute([
                     ':userId'       => $this->user['userid'],
                     ':providerId'   => $this->config['providerId'],
                     ':cashierToken' => $cashierToken
-                ]) && $query->rowCount() > 1
+                ]) && $query->rowCount() > 0
             ) {
                 $result = $query->fetch(\PDO::FETCH_ASSOC);
                 $newCashierToken = $this->getNewCashierToken($cashierToken);
-                $newCashierToken = $this->insertThirdPartySession($result['session_id'], $result['status'], $result['thirdparty_session_id'], $result['seq'] + 1, $result['game_id'], $newCashierToken, $numberOfHands, $amount, $bet, $rake, time(), time());
+                $newCashierToken = $this->insertThirdPartySession((int)$result['status'], $result['thirdparty_session_id'], $result['seq'] + 1, (int)$result['game_id'], $newCashierToken, $numberOfHands, $amount, $bet, $rake, time(), time(), $result['session_id']);
             }
         } else {
             $newCashierToken = $cashierToken;
@@ -284,7 +289,7 @@ class AbstractUsers
     /**
      * @return bool
      */
-    public function userNewTransactionOk()
+    public function userNewTransactionOk(): bool
     {
         return !($this->user['rights'] & 0x08000000);
     }

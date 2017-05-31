@@ -181,14 +181,20 @@ class ThirdPartyService
             return $response;
         } catch (\SoapFault $soapFault) {
             switch ($soapFault->faultcode) {
+                case '0':
+                    $response->resultCode = 0;//unspecified error
+                break;
                 case '-1':
-                    $response->resultCode = -1;//invaid game ID
+                    $response->resultCode = -1;//invalid game ID
                 break;
                 case '-3':
                     $response->resultCode = -3;//user not found
                 break;
                 case '-4':
                     $response->resultCode = -4;//player blocked for API
+                break;
+                default:
+                    throw new SoapFault($soapFault->faultcode, $soapFault->getMessage());
                 break;
             }
             return $response;

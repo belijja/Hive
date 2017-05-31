@@ -13,7 +13,13 @@ use Configs\GameProviderConfigs;
 
 class UsersFactory
 {
-    public static function getUser(array $thirdPartyServiceUser, string $gameProviderId)
+    /**
+     * @param array $thirdPartyServiceUser
+     * @param string $gameProviderId
+     * @return AbstractUsers
+     * @throws \SoapFault
+     */
+    public static function getUser(array $thirdPartyServiceUser, string $gameProviderId): AbstractUsers
     {
         $user = null;
         foreach (GameProviderConfigs::getGameProviderConfigs() as $key => $value) {
@@ -22,6 +28,10 @@ class UsersFactory
                     $user = $thirdPartyServiceUser['provider_id'] == 2 ? new SKSUser($thirdPartyServiceUser, $value) : new TPUser($thirdPartyServiceUser, $value);
                 }
             }
+        }
+        if (is_null($user)) {
+            error_log('Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
+            throw new \SoapFault('-3', 'Factory user not found');
         }
         return $user;
     }
