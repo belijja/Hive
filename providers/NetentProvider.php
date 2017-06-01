@@ -42,13 +42,18 @@ class NetentProvider
     public function login(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null): string
     {
         $netentSessionId = $this->netentSoapClient->loginUser($thirdPartyServiceUser);
-        $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $netentSessionId . ":" . $gameData['game_id']);
-        if ($sessionDetails == false) {
-            $this->netentSoapClient->logoutUser($netentSessionId);
-            $this->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
-        }
-        if ($sessionDetails['returnCode'] != 1) {
-            throw new \SoapFault($sessionDetails['returnCode'], 'Return code from createSession method.');
+        try {
+            $sessionDetails = $this->createSession($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId, $netentSessionId . ":" . $gameData['game_id']);
+            if ($sessionDetails['returnCode'] != 1) {
+                throw new \SoapFault((string)$sessionDetails['returnCode'], 'Return code from createSession method is not equal to 1.');
+            }
+        } catch (\SoapFault $soapFault) {
+            if ($soapFault->faultcode == 101) {
+                $this->netentSoapClient->logoutUser($netentSessionId);
+                $this->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
+            } else {
+                throw new \SoapFault($soapFault->faultcode, $soapFault->getMessage());
+            }
         }
         return $netentSessionId;
     }
@@ -61,17 +66,17 @@ class NetentProvider
      * @param int|null $platform
      * @param int|null $campaignId
      * @param string|null $netentSessionId
-     * @return null
+     * @return array
      * @throws \SoapFault
      */
-    private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null)
+    private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null): array
     {
         $returnValue = [];
         $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
         /*if (isset($netentSessionId)) {
             $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
             if ($isCashierTokenSet) {
-                return false;
+                throw new \SoapFault('101', 'Cashier token already made, logout and login to obtain new cashier token.');
             }//uncomment this part when method is done because this part will exit the method because there is a cashierToken returned from function
         }*/
         if ((bool)ConfigManager::getIT('isItalian') === true) {
@@ -86,8 +91,9 @@ class NetentProvider
             } else {
                 $aamsGameType = $gameData['aams_game_type'];
             }
+            $doPGDACommunication = true;
         } else {
-            $isItalian = false;
+            $doPGDACommunication = false;
             $aamsGameCode = '';
             $aamsGameType = '';
         }
@@ -107,8 +113,35 @@ class NetentProvider
             error_log("Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             throw new \SoapFault('0', 'Unspecified error.');
         }
+        if (isset($amountInCents) && $amountInCents == 0 && (!isset($campaignId) || $campaignId == 0)) {
+            return [
+                'returnCode'          => ConfigManager::getIT('isItalian') ? 0 : 1,
+                'sessionId'           => null,
+                'amount'              => null,
+                'cashiertoken'        => $cashierToken,
+                'aamsSessionId'       => null,
+                'aamsParticipationId' => null
+            ];
+        }
+        if (isset($gameData['is_slot'])) {
+            $isSlot = $gameData['is_slot'];
+        } else {
+            if (empty($gameData['category_id'])) {
+                error_log('Category ID not set in DB! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                throw new \SoapFault('0', 'Unspecified error.');
+            } else {
+                $isSlot = $gameData['category_id'] == 1;
+            }
+        }
+        $user->externalSessionId = $user->sessionId;
+        if (!isset($campaignId) || $campaignId == 0) {
+            if (!$isSlot) {//change this, it goes without !
+                $bonus = $user->getRealBonusAmount(true);//continue here
+            }
+        }
 
-        return 32;
+        $returnValue['returnCode'] = 43;
+        return $returnValue;//if return type is null script goes into endless loop
     }
 
 }

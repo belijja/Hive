@@ -57,6 +57,7 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
         $response->UserGetInfoResult->Zip = '324324';
         $response->UserGetInfoResult->_UserID = 32;
         $response->UserGetInfoResult->_FatherID = 3;
+        $response->UserGetInfoResult->authorityId = '4343_3223';
         return $response;
         /*$params['userId'] = $userId;
         if ($soapClient == null) {

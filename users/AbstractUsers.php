@@ -18,16 +18,16 @@ class AbstractUsers
     protected $config;
 
     public $sessionId;
-    protected $cashierToken;
-    protected $active;
-    protected $externalSessionId;
-    protected $sessionStatus;
-    protected $externalSessionState;
-    protected $externalSessionCampaignId;
-    protected $balance;
-    protected $gameId;
-    protected $gameName;
-    protected $gameCode;
+    public $cashierToken;
+    public $active;
+    public $externalSessionId;
+    public $sessionStatus;
+    public $externalSessionState;
+    public $externalSessionCampaignId;
+    public $balance;
+    public $gameId;
+    public $gameName;
+    public $gameCode;
 
     /**
      * AbstractUsers constructor.
@@ -292,5 +292,19 @@ class AbstractUsers
     public function userNewTransactionOk(): bool
     {
         return !($this->user['rights'] & 0x08000000);
+    }
+
+    public function getRealBonusAmount($for_update = false)
+    {
+        $q = "SELECT amount FROM tp_ext_bonus WHERE uid={$this->u['userid']} ";
+        if ($for_update) {
+            $q .= "FOR UPDATE";
+        }
+        $bonus = db_one_result0($q, 1);
+        if ($bonus) {
+            return $bonus;
+        } else {
+            return 0;
+        }
     }
 }

@@ -62,6 +62,7 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
      */
     public function checkAndRegisterThirdPartyIntegrationUser(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, string $userDate = null): array
     {
+        $result['authorityId'] = null;//added because of the -variable might have not be defined- notice
         $needUpdate = false;
         $isFirstLogin = 1;
         $returnData = [];
@@ -76,10 +77,8 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
             $result = $query->execute([
                 ':userDate'   => $userDate,
                 ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
-                //only for com
                 ':userId'     => $userId,
                 ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
-                //only for com
             ]);
             if ($result && $query->rowCount() == 1) {
                 $result = $query->fetch(\PDO::FETCH_OBJ);
@@ -92,19 +91,18 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
             }
         } else {
             $query = $this->db->prepare("SELECT c.user_id, 
-                                                 (ud.logintime <= ud.acttime) AS isFirst 
+                                                 (ud.logintime <= ud.acttime) AS isFirst,
+                                                 teud.authority_id as authorityId
                                                  FROM casino_ids c 
-                                                 JOIN udata ud ON c.user_id = ud.uid 
+                                                 JOIN udata ud ON c.user_id = ud.uid
+                                                 LEFT JOIN tp_ext_userdata teud ON c.user_id = teud.casino_id 
                                                  WHERE c.provider_id = :providerId 
                                                  AND c.casino_id = :userId 
                                                  AND c.skin_id = :partnerId");
             if (!$query->execute([
-                ':userDate'   => $userDate,
                 ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
-                //only for com
                 ':userId'     => $userId,
                 ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
-                //only for com
             ])
             ) {
                 throw new \SoapFault('-3', 'Query failed.');
@@ -157,6 +155,18 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
                 $params['affiliateId'] = $user->agentId;
             }
             if (!$needUpdate) {
+                if (!empty($user->authorityId) && is_null($result['authorityId'])) {
+                    $query = $this->db->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
+                    if ($query->execute([
+                        ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                        ':userId'      => $userId,
+                        ':partnerId'   => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId'],
+                        ':authorityId' => $user->authorityId
+                    ])
+                    ) {
+                        $params['authorityId'] = $user->authorityId;
+                    }
+                }
                 $params['active'] = 1;
                 $params['temporaryNick'] = $user->screenName != '' ? 0 : 1;
                 $params['username'] = $user->screenName != '' ? $user->screenName : 'player' . mt_rand(1000000, mt_getrandmax());
