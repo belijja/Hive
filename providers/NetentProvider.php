@@ -12,7 +12,6 @@ namespace Providers;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
-use Users\SKSUser;
 use Users\UsersFactory;
 
 class NetentProvider
@@ -102,7 +101,7 @@ class NetentProvider
         try {
             $cashierToken = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
             $qOne = "UPDATE thirdparty_sessions SET session_id = :sessionId WHERE id = :sessionId";
-            $qTwo = "INSERT INTO tp_open_sessions (session_id) VALUES (:sessionId)";
+            $qTwo = "INSERT INTO tp_open_sessions (session_id, last_ping) VALUES (:sessionId, NOW())";
             $queryOne = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qOne);
             $queryTwo = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qTwo);
             if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([':sessionId' => $user->sessionId])) {
@@ -136,7 +135,8 @@ class NetentProvider
         $user->externalSessionId = $user->sessionId;
         if (!isset($campaignId) || $campaignId == 0) {
             if (!$isSlot) {//change this, it goes without !
-                $bonus = $user->getRealBonusAmount(true);//continue here
+                $bonus = $user->getRealBonusAmount(true);
+                $wagerCampaignDetails = $this->campaign->getWagerDetails();
             }
         }
 

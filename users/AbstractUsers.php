@@ -294,17 +294,26 @@ class AbstractUsers
         return !($this->user['rights'] & 0x08000000);
     }
 
-    public function getRealBonusAmount($for_update = false)
+    /**
+     * @param bool $forUpdate
+     * @return int
+     */
+    public function getRealBonusAmount($forUpdate = false): int
     {
-        $q = "SELECT amount FROM tp_ext_bonus WHERE uid={$this->u['userid']} ";
-        if ($for_update) {
+        $q = "SELECT amount FROM tp_ext_bonus WHERE uid = :userId ";
+        if ($forUpdate) {
             $q .= "FOR UPDATE";
         }
-        $bonus = db_one_result0($q, 1);
-        if ($bonus) {
-            return $bonus;
+        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        if ($query->execute([
+            ':userId' => $this->user['userid']
+        ])/* && $query->rowCount() > 0*/
+        ) {
+            $result = $query->fetch(\PDO::FETCH_ASSOC);
+            $bonus = (int)$result['amount'];
         } else {
-            return 0;
+            $bonus = 0;
         }
+        return $bonus;
     }
 }
