@@ -300,14 +300,14 @@ class AbstractUsers
      */
     public function getRealBonusAmount($forUpdate = false): int
     {
-        $q = "SELECT amount FROM tp_ext_bonus WHERE uid = :userId ";
+        $q = "SELECT amount FROM tp_ext_bonus WHERE uid = :userId";
         if ($forUpdate) {
-            $q .= "FOR UPDATE";
+            $q .= " FOR UPDATE";
         }
         $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
         if ($query->execute([
-            ':userId' => $this->user['userid']
-        ])/* && $query->rowCount() > 0*/
+                ':userId' => $this->user['userid']
+            ]) && $query->rowCount() > 0
         ) {
             $result = $query->fetch(\PDO::FETCH_ASSOC);
             $bonus = (int)$result['amount'];
@@ -315,5 +315,21 @@ class AbstractUsers
             $bonus = 0;
         }
         return $bonus;
+    }
+
+    public function sendNotification($eventId, $details = null): void
+    {
+        $params = [];
+        $params['eventId'] = $eventId;
+        $params['userId'] = $this->user['casino_id'];
+        $params['skinId'] = $this->user['cskinid'];
+        $params['sessionId'] = $this->externalSessionId;
+        switch ($eventId) {
+            case 1://funbonus win notification
+                if (!isset($details['amount'])) {
+                    error_log('Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ');
+                    return;
+                }
+        }
     }
 }

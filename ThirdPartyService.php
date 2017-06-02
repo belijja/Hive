@@ -32,6 +32,7 @@ use Partners\AbstractPartners;
 use Users\ServiceUsers;
 //backOffice
 use BackOffice\Core;
+use BackOffice\Bonus;
 //providers
 use Providers\NetentProvider;
 //configs
@@ -211,7 +212,7 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(), new ThirdPartyIntegrationPartners(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient()));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(), new ThirdPartyIntegrationPartners(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus()));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check

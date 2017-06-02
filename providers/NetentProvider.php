@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Providers;
 
+use BackOffice\Bonus;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
@@ -18,14 +19,17 @@ class NetentProvider
 {
 
     private $netentSoapClient;
+    private $bonus;
 
     /**
      * NetentProvider constructor.
      * @param NetentSoapClient $netentSoapClient
+     * @param Bonus $bonus
      */
-    public function __construct(NetentSoapClient $netentSoapClient)
+    public function __construct(NetentSoapClient $netentSoapClient, Bonus $bonus)
     {
         $this->netentSoapClient = $netentSoapClient;
+        $this->bonus = $bonus;
     }
 
     /**
@@ -47,7 +51,7 @@ class NetentProvider
                 throw new \SoapFault((string)$sessionDetails['returnCode'], 'Return code from createSession method is not equal to 1.');
             }
         } catch (\SoapFault $soapFault) {
-            if ($soapFault->faultcode == 101) {
+            if ($soapFault->faultcode == 101) {//specified error code that means not to stop execution but to logout and login again
                 $this->netentSoapClient->logoutUser($netentSessionId);
                 $this->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
             } else {
@@ -73,7 +77,7 @@ class NetentProvider
         $returnValue = [];
         $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
         /*if (isset($netentSessionId)) {
-            $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token
+            $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token because there can't be two same cashier tokens
             if ($isCashierTokenSet) {
                 throw new \SoapFault('101', 'Cashier token already made, logout and login to obtain new cashier token.');
             }//uncomment this part when method is done because this part will exit the method because there is a cashierToken returned from function
@@ -136,7 +140,15 @@ class NetentProvider
         if (!isset($campaignId) || $campaignId == 0) {
             if (!$isSlot) {//change this, it goes without !
                 $bonus = $user->getRealBonusAmount(true);
-                $wagerCampaignDetails = $this->campaign->getWagerDetails();
+                $wagerCampaignDetails = $this->bonus->getWagerCampaignDetails();
+                if (isset($wagerCampaignDetails['wagering_weekdays'])) {
+                    $weekdays = explode(',', $wagerCampaignDetails['wagering_weekdays']);
+                    if (in_array(date('N'), $weekdays)) {
+                        $user->sendNotification(2);
+                    }
+                }
+            } else {
+                $bonus = null;
             }
         }
 
