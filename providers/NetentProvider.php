@@ -121,7 +121,7 @@ class NetentProvider
                 'returnCode'          => ConfigManager::getIT('isItalian') ? 0 : 1,
                 'sessionId'           => null,
                 'amount'              => null,
-                'cashiertoken'        => $cashierToken,
+                'cashierToken'        => $cashierToken,
                 'aamsSessionId'       => null,
                 'aamsParticipationId' => null
             ];
@@ -146,6 +146,8 @@ class NetentProvider
                     if (in_array(date('N'), $weekdays)) {
                         $user->sendNotification(2);
                     }
+                } else {
+                    error_log("Wagering weekdays not set! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                 }
             } else {
                 $bonus = null;

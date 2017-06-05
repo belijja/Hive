@@ -9,6 +9,7 @@ declare(strict_types = 1);
 
 namespace Users;
 
+use BackOffice\Bonus;
 use Configs\GameProviderConfigs;
 
 class UsersFactory
@@ -25,7 +26,7 @@ class UsersFactory
         foreach (GameProviderConfigs::getGameProviderConfigs() as $key => $value) {
             if ($gameProviderId == $value['providerId']) {
                 if (is_null($user)) {
-                    $user = $thirdPartyServiceUser['provider_id'] == 2 ? new SKSUser($thirdPartyServiceUser, $value) : new TPUser($thirdPartyServiceUser, $value);
+                    $user = $thirdPartyServiceUser['provider_id'] == 2 ? new SKSUser($thirdPartyServiceUser, $value, new Bonus()) : new TPUser($thirdPartyServiceUser, $value, new Bonus());
                 }
             }
         }

@@ -34,4 +34,7 @@ apiConnectionTimeout =
 [IT]
 isItalian =
 
+[BONUS]
+funBonusNotificationLink =
+
 

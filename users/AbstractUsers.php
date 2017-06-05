@@ -11,11 +11,13 @@ namespace Users;
 
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
+use BackOffice\Bonus;
 
 class AbstractUsers
 {
     protected $user;
     protected $config;
+    protected $bonus;
 
     public $sessionId;
     public $cashierToken;
@@ -33,11 +35,13 @@ class AbstractUsers
      * AbstractUsers constructor.
      * @param array $user
      * @param array $config
+     * @param Bonus $bonus
      */
-    public function __construct(array $user, array $config)
+    public function __construct(array $user, array $config, Bonus $bonus)
     {
         $this->user = $user;
         $this->config = $config;
+        $this->bonus = $bonus;
     }
 
     /**
@@ -327,9 +331,83 @@ class AbstractUsers
         switch ($eventId) {
             case 1://funbonus win notification
                 if (!isset($details['amount'])) {
-                    error_log('Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ');
+                    error_log('Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     return;
                 }
+                if (isset($details['campaignId'])) {
+                    $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT real_campaign_id FROM tp_campaigns WHERE seq = :seq");
+                    if ($query->execute([
+                            ':seq' => $details['campaignId']
+                        ]) && $query->rowCount() > 0
+                    ) {
+                        $result = $query->fetch(\PDO::FETCH_ASSOC);
+                        $realCampaignId = $result['real_campaign_id'];
+                    } else {
+                        error_log('Query failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                        return;
+                    }
+                    $campaignMaxWin = $this->bonus->getCampaignMaxWin($realCampaignId);
+                    if (isset($campaignMaxWin) && $campaignMaxWin < $details['amount']) {
+                        $details['amount'] = $campaignMaxWin;
+                    }
+                }
+                $params['amount'] = $details['amount'];
+            break;
+            case 2://wagering campaign start notification
+                $wageringCampaignDetails = $this->bonus->getWagerCampaignDetails();
+                if (empty($wageringCampaignDetails)) {
+                    error_log('Wagering campaign not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    return;
+                } else {
+                    $bonusAmount = $wageringCampaignDetails['bonus_amount'];
+                    $multiplier = $wageringCampaignDetails['wagering_multiplier'];
+                    $milestone = $wageringCampaignDetails['wagering_milestone'];
+                    $weekdays = explode(',', $wageringCampaignDetails['wagering_weekdays']);
+                }
+                $today = date('N');
+                $dates = [];
+                foreach ($weekdays as $weekday) {
+                    if ($today >= $weekday) {
+                        $temporary = $today - $weekday;
+                        $dates[$weekday] = date("Y-m-d", strtotime("-$temporary days"));
+                    }
+                }
+                $datesString = implode("' OR date='", $dates);
+                $q = "SELECT SUM(slot_wager) FROM userstats WHERE uid = :userId AND (date='$datesString')";
+                $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+                if ($query->execute([
+                        ':userId' => $this->user['userid']
+                    ]) && $query->rowCount() > 0
+                ) {
+                    $result = $query->fetch(\PDO::FETCH_ASSOC);
+                    $params['bonusAmount'] = $bonusAmount;
+                    $params['multiplier'] = $multiplier;
+                    $params['milestone'] = $milestone;
+                    $params['weekdays'] = $wageringCampaignDetails['wagering_weekdays'];
+                    $params['wagered'] = $result;
+                }
+            break;
+            default:
+                error_log('Event ID not valid! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                return;
+            break;
+        }
+
+        $url = ConfigManager::getBonus('funBonusNotificationLink') . http_build_query($params);
+        $curl = curl_init();
+        $options = [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => 1
+        ];
+        curl_setopt_array($curl, $options);
+        $response = curl_exec($curl);
+        $transferInfo = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        if ($response) {
+            return;
+        } else {
+            error_log('CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
+            return;
         }
     }
 }

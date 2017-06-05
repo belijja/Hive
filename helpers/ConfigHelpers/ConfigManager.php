@@ -22,6 +22,7 @@ class ConfigManager
     private static $server;
     private static $netent;
     private static $it;
+    private static $bonus;
 
     /**
      * @throws \SoapFault
@@ -39,6 +40,7 @@ class ConfigManager
         self::$server = $config['SERVER'];
         self::$netent = $config['NETENT'];
         self::$it = $config['IT'];
+        self::$bonus = $config['BONUS'];
 
     }
 
@@ -70,6 +72,15 @@ class ConfigManager
         } else {
             throw new \SoapFault('INVALID_ARG', "Argument " . $configKey . " doesn't exists in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    public static function getBonus(string $key): string
+    {
+        return self::$bonus[$key];
     }
 
     /**
