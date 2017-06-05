@@ -152,8 +152,20 @@ class NetentProvider
             } else {
                 $bonus = null;
             }
+            if (isset($bonus) && $bonus > 0) {
+                if ($bonus >= $amountInCents) {
+                    $bonus = $amountInCents;
+                    $realAmount = 0;
+                } else {
+                    $realAmount = $amountInCents - $bonus;
+                }
+            } else {
+                $bonus = 0;
+                $realAmount = $amountInCents;
+            }
         }
 
+        $user->logSession(__FUNCTION__ . ": start: userid=" . $user->user['userid'] . " r_amount='$realAmount' bonus='$bonus' gameid='{$user->user['session_data']['gameid']}', aams_gamecode='$aamsGameCode', aams_gametype='$aamsGameType' ip='$ip' platform='$platform'");
         $returnValue['returnCode'] = 43;
         return $returnValue;//if return type is null script goes into endless loop
     }

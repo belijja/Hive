@@ -15,7 +15,7 @@ use BackOffice\Bonus;
 
 class AbstractUsers
 {
-    protected $user;
+    public $user;
     protected $config;
     protected $bonus;
 
@@ -321,7 +321,12 @@ class AbstractUsers
         return $bonus;
     }
 
-    public function sendNotification($eventId, $details = null): void
+    /**
+     * @param int $eventId
+     * @param array|null $details
+     * @return void
+     */
+    public function sendNotification(int $eventId, array $details = null): void
     {
         $params = [];
         $params['eventId'] = $eventId;
@@ -373,7 +378,7 @@ class AbstractUsers
                     }
                 }
                 $datesString = implode("' OR date='", $dates);
-                $q = "SELECT SUM(slot_wager) FROM userstats WHERE uid = :userId AND (date='$datesString')";
+                $q = "SELECT SUM(slot_wager) FROM userstats WHERE uid = :userId AND (date = '$datesString')";
                 $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
                 if ($query->execute([
                         ':userId' => $this->user['userid']
@@ -409,5 +414,16 @@ class AbstractUsers
             error_log('CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
             return;
         }
+    }
+
+    public function logSession($message, $flags = 0)
+    {
+        $timeOfTheDay = gettimeofday();
+        $secondsThisDay = (int)($timeOfTheDay['usec'] / 100);
+        $t = str_pad((string)$secondsThisDay, 4, '0', STR_PAD_LEFT);
+        $e = time();
+        $d = strftime("%F %T " . str_pad((string)$secondsThisDay, 4, '0', STR_PAD_LEFT), $timeOfTheDay['sec']);
+        //continue here
+        $t = 32;
     }
 }
