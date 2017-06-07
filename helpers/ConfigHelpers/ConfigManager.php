@@ -23,6 +23,7 @@ class ConfigManager
     private static $netent;
     private static $it;
     private static $bonus;
+    private static $session;
 
     /**
      * @throws \SoapFault
@@ -41,6 +42,7 @@ class ConfigManager
         self::$netent = $config['NETENT'];
         self::$it = $config['IT'];
         self::$bonus = $config['BONUS'];
+        self::$session = $config['SESSION'];
 
     }
 
@@ -72,6 +74,15 @@ class ConfigManager
         } else {
             throw new \SoapFault('INVALID_ARG', "Argument " . $configKey . " doesn't exists in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    public static function getSession(string $key): string
+    {
+        return self::$session[$key];
     }
 
     /**

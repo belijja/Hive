@@ -397,7 +397,6 @@ class AbstractUsers
                 return;
             break;
         }
-
         $url = ConfigManager::getBonus('funBonusNotificationLink') . http_build_query($params);
         $curl = curl_init();
         $options = [
@@ -416,14 +415,21 @@ class AbstractUsers
         }
     }
 
-    public function logSession($message, $flags = 0)
+    /**
+     * @param string $message
+     * @param int $flags
+     * @return void
+     */
+    public function logSession(string $message, int $flags = 0): void
     {
         $timeOfTheDay = gettimeofday();
-        $secondsThisDay = (int)($timeOfTheDay['usec'] / 100);
-        $t = str_pad((string)$secondsThisDay, 4, '0', STR_PAD_LEFT);
-        $e = time();
-        $d = strftime("%F %T " . str_pad((string)$secondsThisDay, 4, '0', STR_PAD_LEFT), $timeOfTheDay['sec']);
-        //continue here
-        $t = 32;
+        $microsecondsThisDay = (int)($timeOfTheDay['usec'] / 100);//getting number of microseconds in that day
+        $dateTimeWithMicroseconds = strftime("%F %T." . str_pad((string)$microsecondsThisDay, 4, '0', STR_PAD_LEFT), $timeOfTheDay['sec']);
+        $sessionLog = ConfigManager::getSession('sessionLogDir');
+        $r = substr($dateTimeWithMicroseconds, 0, 10);
+        if (!($flags & 2)) {
+            $sessionLog = $sessionLog . substr($dateTimeWithMicroseconds, 0, 10);
+        }
+        error_log($dateTimeWithMicroseconds . ' Session ID ' . $this->externalSessionId . ' ' . $message . "\n", 3, $sessionLog);
     }
 }

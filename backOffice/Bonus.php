@@ -20,7 +20,7 @@ class Bonus
     public function getWagerCampaignDetails(): array
     {
         $wageredCampaign = [];
-        $query = Db::getInstance(ConfigManager::getDb('database', false))->prepare("SELECT c.id, c.bonus_amount, c.wagering_multiplier, DATE_ADD(c.end_date, interval + wagering_days day) as wagering_expiry_days, c.wagering_milestone, c.wagering_weekdays, c.bonus_max_amount
+        $query = Db::getInstance(ConfigManager::getDb('database', false))->prepare("SELECT c.id, c.bonus_amount, c.wagering_multiplier, DATE_ADD(NOW(), interval + wagering_days day) as wagering_expiry_days, c.wagering_milestone, c.wagering_weekdays, c.bonus_max_amount
                 FROM campaigns c 
                 WHERE c.start_date <= NOW() 
                 AND c.end_date >= NOW() 

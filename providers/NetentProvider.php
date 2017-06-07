@@ -108,7 +108,10 @@ class NetentProvider
             $qTwo = "INSERT INTO tp_open_sessions (session_id, last_ping) VALUES (:sessionId, NOW())";
             $queryOne = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qOne);
             $queryTwo = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qTwo);
-            if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([':sessionId' => $user->sessionId])) {
+            if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([
+                    ':sessionId' => $user->sessionId
+                ])
+            ) {
                 Db::getInstance(ConfigManager::getDb('database', true))->commit();
             }
         } catch (\SoapFault $soapFault) {
@@ -129,16 +132,12 @@ class NetentProvider
         if (isset($gameData['is_slot'])) {
             $isSlot = $gameData['is_slot'];
         } else {
-            if (empty($gameData['category_id'])) {
-                error_log('Category ID not set in DB! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
-                throw new \SoapFault('0', 'Unspecified error.');
-            } else {
-                $isSlot = $gameData['category_id'] == 1;
-            }
+            error_log('is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+            throw new \SoapFault('0', 'Unspecified error.');
         }
         $user->externalSessionId = $user->sessionId;
         if (!isset($campaignId) || $campaignId == 0) {
-            if (!$isSlot) {//change this, it goes without !
+            if ($isSlot) {
                 $bonus = $user->getRealBonusAmount(true);
                 $wagerCampaignDetails = $this->bonus->getWagerCampaignDetails();
                 if (isset($wagerCampaignDetails['wagering_weekdays'])) {
@@ -163,9 +162,36 @@ class NetentProvider
                 $bonus = 0;
                 $realAmount = $amountInCents;
             }
+            $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", realAmount = " . $realAmount . ", bonus = " . $bonus . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
+            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
+            if (!$query->execute([
+                    ':id'          => $user->sessionId,
+                    ':userId'      => $user->user['userid'],
+                    ':amount'      => $amountInCents,
+                    ':bonusAmount' => $bonus,
+                    ':ip'          => $ip,
+                    ':platform'    => $platform
+                ]) || $query->rowCount() < 1
+            ) {
+                $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
+                throw new \SoapFault('0', 'Unspecified error.');
+            }
+        } else {
+            $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", campaignId = " . $campaignId . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
+            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("INSERT INTO tp_ext_sessions (id, uid, state, ip, platform, campaign_id) VALUES (:id, :userId, 0, :ip, :platform, :campaignId)");
+            if (!$query->execute([
+                    ':id'         => $user->sessionId,
+                    ':userId'     => $user->user['userid'],
+                    ':ip'         => $ip,
+                    ':platform'   => $platform,
+                    ':campaignId' => $campaignId
+                ]) || $query->rowCount() < 1
+            ) {
+                $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
+                throw new \SoapFault('0', 'Unspecified error.');
+            }
         }
 
-        $user->logSession(__FUNCTION__ . ": start: userid=" . $user->user['userid'] . " r_amount='$realAmount' bonus='$bonus' gameid='{$user->user['session_data']['gameid']}', aams_gamecode='$aamsGameCode', aams_gametype='$aamsGameType' ip='$ip' platform='$platform'");
         $returnValue['returnCode'] = 43;
         return $returnValue;//if return type is null script goes into endless loop
     }
