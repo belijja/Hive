@@ -14,22 +14,26 @@ use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
 use Users\UsersFactory;
+use Pgda\PGDAIntegration;
 
 class NetentProvider
 {
 
     private $netentSoapClient;
     private $bonus;
+    private $pgda;
 
     /**
      * NetentProvider constructor.
      * @param NetentSoapClient $netentSoapClient
      * @param Bonus $bonus
+     * @param PGDAIntegration $pgda
      */
-    public function __construct(NetentSoapClient $netentSoapClient, Bonus $bonus)
+    public function __construct(NetentSoapClient $netentSoapClient, Bonus $bonus, PGDAIntegration $pgda)
     {
         $this->netentSoapClient = $netentSoapClient;
         $this->bonus = $bonus;
+        $this->pgda = $pgda;
     }
 
     /**
@@ -135,6 +139,7 @@ class NetentProvider
             error_log('is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
             throw new \SoapFault('0', 'Unspecified error.');
         }
+        //insert session, state 0
         $user->externalSessionId = $user->sessionId;
         if (!isset($campaignId) || $campaignId == 0) {
             if ($isSlot) {
@@ -164,14 +169,15 @@ class NetentProvider
             }
             $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", realAmount = " . $realAmount . ", bonus = " . $bonus . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
             $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
-            if (!$query->execute([
+            if (/*!$query->execute([
                     ':id'          => $user->sessionId,
                     ':userId'      => $user->user['userid'],
                     ':amount'      => $amountInCents,
                     ':bonusAmount' => $bonus,
                     ':ip'          => $ip,
                     ':platform'    => $platform
-                ]) || $query->rowCount() < 1
+                ]) || $query->rowCount() < 1*/
+                1 == 2
             ) {
                 $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
                 throw new \SoapFault('0', 'Unspecified error.');
@@ -190,6 +196,10 @@ class NetentProvider
                 $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
                 throw new \SoapFault('0', 'Unspecified error.');
             }
+        }
+        //create PGDA session, state 1
+        if ($doPGDACommunication) {
+            $pgdaCode = $this->pgda->casinoCreate((int)$aamsGameCode, (int)$aamsGameType, (int)$user->sessionId, date("Y-m-d H:i:s", $date), (isset($campaignId) && $campaignId != 0));
         }
 
         $returnValue['returnCode'] = 43;

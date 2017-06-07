@@ -24,6 +24,7 @@ class ConfigManager
     private static $it;
     private static $bonus;
     private static $session;
+    private static $pgda;
 
     /**
      * @throws \SoapFault
@@ -43,6 +44,7 @@ class ConfigManager
         self::$it = $config['IT'];
         self::$bonus = $config['BONUS'];
         self::$session = $config['SESSION'];
+        self::$pgda = $config['PGDA'];
 
     }
 
@@ -74,6 +76,15 @@ class ConfigManager
         } else {
             throw new \SoapFault('INVALID_ARG', "Argument " . $configKey . " doesn't exists in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
+    }
+
+    /**
+     * @param string $key
+     * @return string
+     */
+    public static function getPgda(string $key): string
+    {
+        return self::$pgda[$key];
     }
 
     /**
