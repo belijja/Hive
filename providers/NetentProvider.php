@@ -199,7 +199,7 @@ class NetentProvider
         }
         //create PGDA session, state 1
         if ($doPGDACommunication) {
-            $pgdaCode = $this->pgda->casinoCreate((int)$aamsGameCode, (int)$aamsGameType, (int)$user->sessionId, date("Y-m-d H:i:s", $date), (isset($campaignId) && $campaignId != 0));
+            $pgdaCode = $this->pgda->casinoCreate((int)$aamsGameCode, (int)$aamsGameType, $user->sessionId, date("Y-m-d H:i:s", $date), (isset($campaignId) && $campaignId != 0));
         }
 
         $returnValue['returnCode'] = 43;

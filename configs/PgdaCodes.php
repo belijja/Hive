@@ -15,6 +15,7 @@ class PgdaCodes
 {
     private static $pgdaPrefixCasinoCodesPrimary = [
         'create'         => 40002,
+        //if you want to switch to default configs comment this primary value and put null on that place
         'createTest'     => 40000000,
         'transaction'    => 42001,
         'delete'         => 50001,
@@ -23,7 +24,7 @@ class PgdaCodes
         'sessionBalance' => 59000
     ];
 
-    private static $pgdaPrefixCasinoCodesSecondary = [
+    private static $pgdaPrefixCasinoCodesDefault = [
         'create'         => 40000,
         'createTest'     => 40000000,
         'transaction'    => 42000,
@@ -33,12 +34,33 @@ class PgdaCodes
         'sessionBalance' => 59000
     ];
 
+    private static $pgdaServerPathSuffixPrimary = [//primary and default are the same?
+        'cash'       => 'SH',
+        'tournament' => 'TR',
+        'casino'     => 'QF',
+        '580'        => '580',
+        '780'        => '780'
+    ];
+
+    private static $pgdaServerPathSuffixDefault = [
+        'cash'       => 'SH',
+        'tournament' => 'TR',
+        'casino'     => 'QF',
+        '580'        => '580',
+        '780'        => '780'
+    ];
+
+    public static function getPgdaServerPathCodes(string $pgdaKey): string
+    {
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixDefault);
+    }
+
     /**
      * @param string $pgdaKey
      * @return string
      */
     public static function getPgdaCasinoCodes(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesSecondary);
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesDefault);
     }
 }

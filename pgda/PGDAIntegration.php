@@ -11,30 +11,96 @@ namespace Pgda;
 
 use Configs\PgdaCodes;
 use Helpers\ConfigHelpers\ConfigManager;
+use Models\PgdaModels;
+use Pgda\Messages\Message400;
 
 class PGDAIntegration
 {
+    private $pgdaModels;
+
     /**
+     * PGDAIntegration constructor.
+     * @param PgdaModels $pgdaModels
+     */
+    public function __construct(PgdaModels $pgdaModels)
+    {
+        $this->pgdaModels = $pgdaModels;
+        $this->pgdaModels->prefixCasinoCreateTest = PgdaCodes::getPgdaCasinoCodes('createTest');
+        $this->pgdaModels->prefixCasinoCreate = PgdaCodes::getPgdaCasinoCodes('create');
+        $this->pgdaModels->prefixCasinoTransaction = PgdaCodes::getPgdaCasinoCodes('transaction');
+        $this->pgdaModels->prefixCasinoDelete = PgdaCodes::getPgdaCasinoCodes('delete');
+        $this->pgdaModels->prefixCasinoDeleteTest = PgdaCodes::getPgdaCasinoCodes('deleteTest');
+        $this->pgdaModels->prefixCasinoHistory = PgdaCodes::getPgdaCasinoCodes('history');
+        $this->pgdaModels->prefixCasinoSessionBalance = PgdaCodes::getPgdaCasinoCodes('sessionBalance');
+
+        $this->pgdaModels->serverPathSuffixCash = PgdaCodes::getPgdaServerPathCodes('cash');
+        $this->pgdaModels->serverPathSuffixTournament = PgdaCodes::getPgdaServerPathCodes('tournament');
+        $this->pgdaModels->serverPathSuffixCasino = PgdaCodes::getPgdaServerPathCodes('casino');
+        $this->pgdaModels->serverPathSuffix580 = PgdaCodes::getPgdaServerPathCodes('580');
+        $this->pgdaModels->serverPathSuffix780 = PgdaCodes::getPgdaServerPathCodes('780');
+    }
+
+
+
+
+    /**
+     * This message is being sent when session is started.
+     *
      * @param int $aamsGameCode
      * @param int $aamsGameType
-     * @param int $sessionId
-     * @param string $date
+     * @param string $sessionId
+     * @param string $datetime
      * @param bool|null $isFun
      * @param bool|null $gameTesting
      * @return array
      */
-    //message 400
-    public function casinoCreate(int $aamsGameCode, int $aamsGameType, int $sessionId, string $datetime, bool $isFun = null, bool $gameTesting = null): array
+    //start of session message 400
+    public function casinoCreate(int $aamsGameCode, int $aamsGameType, string $sessionId, string $datetime, bool $isFun = null, bool $gameTesting = null): array
     {
         $parsedDate = $this->getPgdaDateAsArray($datetime);
         $endDate = $this->getPgdaEndDateAsArray($datetime);
-        $r = PgdaCodes::getPgdaCasinoCodes('prefixCasinoCreate');
         if ($gameTesting) {
-            $transactionCode = $this->getPgdaTransactionId();
+            $transactionCode = $this->getPgdaTransactionId($this->pgdaModels->prefixCasinoCreateTest, $sessionId);
         } else {
-            $transactionCode = $this->getPgdaTransactionId();
+            $transactionCode = $this->getPgdaTransactionId($this->pgdaModels->prefixCasinoCreate, $sessionId);
         }
+        $message = Message400::getInstance();
+        $message->setSessionId($transactionCode);
+        $message->setStartYear($parsedDate['year']);
+        $message->setStartMonth($parsedDate['month']);
+        $message->setStartDay($parsedDate['day']);
+        $message->setStartHour($parsedDate['hour']);
+        $message->setStartMinute($parsedDate['minute']);
+        $message->setStartSecond($parsedDate['second']);
+        $message->setEndYear($endDate['year']);
+        $message->setEndMonth($endDate['mon']);
+        $message->setEndDay($endDate['mday']);
+        if ($isFun) {
+            $message->setAttribute('BON', 'F');
+        } else {
+            $message->setAttribute('BON', 'B');
+        }
+        $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
         return [];
+    }
+
+    /**
+     * @param string $prefix
+     * @param string $id
+     * @return string
+     */
+    private function getPgdaTransactionId(string $prefix, string $id): string
+    {
+        $p = pack("V", $prefix);
+        for ($i = 0; $i < 8; $i++) {
+            $p .= chr(bcmod($id, '256'));
+            $id = bcdiv($id, '256');
+        }
+        $b64 = base64_encode($p);
+        $b64 = str_replace("=", "-", $b64);
+        $b64 = str_replace("+", ".", $b64);
+        $b64 = str_replace("/", "_", $b64);
+        return $b64;
     }
 
     private function getPgdaEndDateAsArray(string $datetime): array
