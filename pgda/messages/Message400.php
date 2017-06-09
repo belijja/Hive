@@ -9,6 +9,8 @@ declare(strict_types = 1);
 
 namespace Pgda\Messages;
 
+use Pgda\Fields\PField;
+
 class Message400 extends AbstractMessage
 {
     private $attributeMultiplies = [];
@@ -141,6 +143,16 @@ class Message400 extends AbstractMessage
         }
         $this->attributeMultiplies[$name] = $value;
         $this->attributeNumber++;
+    }
+
+    public function prepare()
+    {
+        foreach ($this->arrayStruct as $fieldVariableName) {
+            if (is_null($this->$fieldVariableName)) {
+                throw new \UnexpectedValueException($fieldVariableName . " value not defined. Error in: " . __METHOD__ . " on line " . __LINE__);
+            }
+        }
+        $this->attach(PField::set('ID Sessione', PField::string, $this->sessionId, 16));
     }
 
 }
