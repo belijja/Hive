@@ -11,7 +11,7 @@ namespace Pgda\Fields;
 
 abstract class AbstractField
 {
-    private $typeLength;
+    public $typeLength;
     protected $name;
     protected $value;
     protected $invoke;

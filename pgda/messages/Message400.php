@@ -145,14 +145,34 @@ class Message400 extends AbstractMessage
         $this->attributeNumber++;
     }
 
-    public function prepare()
+    /**
+     * @return void
+     */
+    public function prepare(): void
     {
         foreach ($this->arrayStruct as $fieldVariableName) {
             if (is_null($this->$fieldVariableName)) {
                 throw new \UnexpectedValueException($fieldVariableName . " value not defined. Error in: " . __METHOD__ . " on line " . __LINE__);
             }
         }
-        $this->attach(PField::set('ID Sessione', PField::string, $this->sessionId, 16));
+        $this->attach(PField::set("ID Sessione", PField::string, $this->sessionId, 16));
+        $this->attach(PField::set("Start Day", PField::shortInt, (is_null($this->startDay) ? gmdate("d") : $this->startDay)));
+        $this->attach(PField::set("Start Month", PField::shortInt, (is_null($this->startMonth) ? gmdate("m") : $this->startMonth)));
+        $this->attach(PField::set("Start Year", PField::shortInt, (is_null($this->startYear) ? gmdate("Y") : $this->startYear)));
+        $this->attach(PField::set("Start Hour", PField::shortInt, (is_null($this->startHour) ? gmdate("H") : $this->startHour)));
+        $this->attach(PField::set("Start Minute", PField::shortInt, (is_null($this->startMin) ? gmdate("i") : $this->startMin)));
+        $this->attach(PField::set("Start Second", PField::shortInt, (is_null($this->startSec) ? gmdate("s") : $this->startSec)));
+        $this->attach(PField::set("End Day", PField::shortInt, $this->endDay));
+        $this->attach(PField::set("End Month", PField::shortInt, $this->endMonth));
+        $this->attach(PField::set("End Year", PField::shortInt, $this->endYear));
+        $this->attach(PField::set("Attribute Num.", PField::int, $this->attributeNumber));
+        if (count($this->attributeMultiplies) != $this->attributeNumber) {
+            throw new \UnexpectedValueException("Attribute number defined does not match with multiple attribute couple number. Error in: " . __METHOD__ . " on line " . __LINE__);
+        }
+        foreach ($this->attributeMultiplies as $code => $value) {
+            $this->attach(PField::set("$code", PField::string, $code, 3));
+            $this->attach(PField::set("$code -> $value", PField::string, $value, 16));
+        }
     }
 
 }
