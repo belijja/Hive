@@ -64,7 +64,7 @@ class PGDAIntegration
         } else {
             $transactionCode = $this->getPgdaTransactionId($this->pgdaModels->prefixCasinoCreate, $sessionId);
         }
-        $message = Message400::getInstance();
+        $message = Message400::getInstance(400);
         $message->setSessionId($transactionCode);
         $message->setStartYear($parsedDate['year']);
         $message->setStartMonth($parsedDate['month']);

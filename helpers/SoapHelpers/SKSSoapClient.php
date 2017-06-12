@@ -11,7 +11,7 @@ namespace Helpers\SoapHelpers;
 
 use Helpers\ConfigHelpers\ConfigManager;
 
-class ISBetsSoapClient implements ISoapClient
+class SKSSoapClient implements ISoapClient
 {
 
     public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
@@ -56,10 +56,10 @@ class ISBetsSoapClient implements ISoapClient
         $response->GetUserInfoResult->_UserID = 32;
         $response->GetUserInfoResult->_FatherID = 3;
         return $response;
-        /*$params = $this->initISBetsParams($skinId);
+        /*$params = $this->initSKSParams($skinId);
         $params['_UserID'] = $userId;
         if ($soapClient == null) {
-            $soapClient = $this->getISBetsSoapClient('Users');
+            $soapClient = $this->getSKSSoapClient('Users');
         }
         $response = $soapClient->GetUserInfo(['objRequest' => $params]);
         if (!is_soap_fault($response) && isset($response->GetUserInfoResult->_UserInfo->UserID) && !isset($response->GetUserInfoResult->_UserID)) {
@@ -71,23 +71,23 @@ class ISBetsSoapClient implements ISoapClient
         return $response;
     }
 
-    private function getISBetsSoapClient(string $service = 'Users'): \SoapClient
+    private function getSKSSoapClient(string $service = 'Users'): \SoapClient
     {
-        return new \SoapClient(ConfigManager::getISBets('apiUri') . "/" . $service . ".svc?wsdl", [
+        return new \SoapClient(ConfigManager::getSKS('apiUri') . "/" . $service . ".svc?wsdl", [
             'trace'              => 1,
             'exceptions'         => 0,
             'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-            'connection_timeout' => ConfigManager::getISBets('apiConnectionTimeout')
+            'connection_timeout' => ConfigManager::getSKS('apiConnectionTimeout')
         ]);
     }
 
-    private function initISBetsParams(int $skinId, string $apiAccount = null, string $apiPass = null): array
+    private function initSKSParams(int $skinId, string $apiAccount = null, string $apiPass = null): array
     {
         if (!isset($apiAccount)) {
-            $apiAccount = ConfigManager::getISBets('apiAccount');
+            $apiAccount = ConfigManager::getSKS('apiAccount');
         }
         if (!isset($apiPass)) {
-            $apiPass = ConfigManager::getISBets('apiPassword');
+            $apiPass = ConfigManager::getSKS('apiPassword');
         }
         $params = [
             '_APIAccount'  => $apiAccount,

@@ -34,11 +34,21 @@ class Message400 extends AbstractMessage
     private $attributeNumber;
 
     /**
+     * Message400 constructor.
+     * @param $messageId
+     */
+    private function __construct($messageId)
+    {
+        $this->messageId = $messageId;
+    }
+
+    /**
+     * @param int $messageId
      * @return Message400
      */
-    public static function getInstance()
+    public static function getInstance($messageId)
     {
-        return new Message400();
+        return new Message400($messageId);
     }
 
     /**

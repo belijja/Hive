@@ -26,9 +26,9 @@ use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
 use Helpers\SoapHelpers\NetentSoapClient;
 //partners
-use Partners\ISBetsPartners;
-use Partners\ThirdPartyIntegrationPartners;
-use Partners\AbstractPartners;
+use Partners\SKSPartner;
+use Partners\ThirdPartyIntegrationPartner;
+use Partners\AbstractPartner;
 //users
 use Users\ServiceUsers;
 //backOffice
@@ -48,7 +48,7 @@ class ThirdPartyService
 {
     public $soapManager;
     public $paramManager;
-    public $ISBets;
+    public $SKS;
     public $thirdPartyIntegration;
     public $serviceUsers;
     private $sessionManager;
@@ -59,18 +59,18 @@ class ThirdPartyService
      * ThirdPartyService constructor.
      * @param SoapManager $soapManager
      * @param ParamManager $paramManager
-     * @param AbstractPartners $ISBets
-     * @param AbstractPartners $thirdPartyIntegration
+     * @param AbstractPartner $SKS
+     * @param AbstractPartner $thirdPartyIntegration
      * @param ServiceUsers $serviceUsers
      * @param SessionManager $sessionManager
      * @param Core $core
      * @param NetentProvider $NetentProvider
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartners $ISBets, AbstractPartners $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartner $SKS, AbstractPartner $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
-        $this->ISBets = $ISBets;
+        $this->SKS = $SKS;
         $this->thirdPartyIntegration = $thirdPartyIntegration;
         $this->serviceUsers = $serviceUsers;
         $this->sessionManager = $sessionManager;
@@ -118,22 +118,15 @@ class ThirdPartyService
                 return $response;
             }
             $is_demo = ($option & 2) && $gameId != 0;
-            $providerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
+            $partnerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
             if (!$is_demo) {//if it's not demo game
-                if ($providerIdFromConfigFile === 2) {//registering if it's SKS user
-                    $this->ISBets->checkAndRegisterUser([
-                        $userId,
-                        $skinId
-                    ]);
+                if ($partnerIdFromConfigFile === 2) {//registering if it's SKS user
+                    $this->SKS->checkAndRegisterUser($userId, $skinId, (int)ConfigManager::getSKS('localPartnerId'));
                 } else {//registering if it's third party user
-                    $this->thirdPartyIntegration->checkAndRegisterUser([
-                        $userId,
-                        $skinId,
-                        $providerIdFromConfigFile
-                    ]);
+                    $this->thirdPartyIntegration->checkAndRegisterUser($userId, $skinId, $partnerIdFromConfigFile);
                 }
                 $thirdPartyServiceUser = $this->serviceUsers->getUserData([//get data about the user
-                    $providerIdFromConfigFile,
+                    $partnerIdFromConfigFile,
                     $skinId,
                     $userId
                 ]);
@@ -141,7 +134,7 @@ class ThirdPartyService
                 $thirdPartyServiceUser = [];
                 $thirdPartyServiceUser['userId'] = -1;
                 $thirdPartyServiceUser['currency'] = 'EUR';
-                $pokerSkinId = $this->serviceUsers->getPokerSkinId($providerIdFromConfigFile, $skinId);
+                $pokerSkinId = $this->serviceUsers->getPokerSkinId($partnerIdFromConfigFile, $skinId);
                 $thirdPartyServiceUser['skinId'] = array_key_exists('status', $pokerSkinId) ? $pokerSkinId['status'] : $pokerSkinId['poker_skinid'];
             }
             $sessionId = $this->sessionManager->startSessionAndGetSessionId();//starting session and getting session id
@@ -215,7 +208,7 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new ISBetsPartners(), new ThirdPartyIntegrationPartners(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(), new ThirdPartyIntegrationPartner(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check

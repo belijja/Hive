@@ -14,7 +14,7 @@ use Helpers\ServerHelpers\ServerManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\ISoapClient;
 
-abstract class AbstractPartners
+abstract class AbstractPartner
 {
     protected $serverManager;
     protected $db;
@@ -33,8 +33,11 @@ abstract class AbstractPartners
     }
 
     /**
-     * @param array $arrayOfParams
+     * @param int $userId
+     * @param int $skinId
+     * @param int $partnerId
+     * @param \SoapClient|null $soapClient
      * @return void
      */
-    public abstract function checkAndRegisterUser(array $arrayOfParams): void;
+    public abstract function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void;
 }

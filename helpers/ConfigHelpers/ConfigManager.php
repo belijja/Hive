@@ -18,7 +18,7 @@ class ConfigManager
     private static $firstDb;
     private static $secondDb;
     private static $wsdl;
-    private static $ISBets;
+    private static $SKS;
     private static $server;
     private static $netent;
     private static $it;
@@ -38,7 +38,7 @@ class ConfigManager
         self::$firstDb = $config['DATABASE 1'];
         self::$secondDb = $config['DATABASE 2'];
         self::$wsdl = $config['WSDL'];
-        self::$ISBets = $config['ISBETS'];
+        self::$SKS = $config['SKS'];
         self::$server = $config['SERVER'];
         self::$netent = $config['NETENT'];
         self::$it = $config['IT'];
@@ -136,9 +136,9 @@ class ConfigManager
      * @param string $key
      * @return string
      */
-    public static function getISBets(string $key): string
+    public static function getSKS(string $key): string
     {
-        return self::$ISBets[$key];
+        return self::$SKS[$key];
     }
 
     /**

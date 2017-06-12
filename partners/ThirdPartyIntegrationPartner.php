@@ -14,14 +14,14 @@ use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 
 /**
- * Class ThirdPartyIntegrationPartners
+ * Class ThirdPartyIntegrationPartner
  * @package Partners
  */
-class ThirdPartyIntegrationPartners extends AbstractPartners
+class ThirdPartyIntegrationPartner extends AbstractPartner
 {
 
     /**
-     * ThirdPartyIntegrationPartners constructor.
+     * ThirdPartyIntegrationPartner constructor.
      */
     public function __construct()
     {
@@ -29,19 +29,21 @@ class ThirdPartyIntegrationPartners extends AbstractPartners
     }
 
     /**
-     * @param array $arrayOfParams
-     * @return void
+     * @param int $userId
+     * @param int $skinId
+     * @param int $partnerId
+     * @param \SoapClient|null $soapClient
      * @throws \SoapFault
+     * @return void
      */
-    public function checkAndRegisterUser(array $arrayOfParams): void
+    public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
-        @list($userId, $skinId, $providerId, $soapClient) = $arrayOfParams;
         $query = $this->db->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
                                              WHERE provider_id = :providerId 
                                              AND provider_skinid = :providerSkinId");
         if (!$query->execute([
-                ':providerId'     => $providerId,
+                ':providerId'     => $partnerId,
                 ':providerSkinId' => $skinId
             ]) || $query->rowCount() != 1
         ) {//if query fails or there is no returned rows from db

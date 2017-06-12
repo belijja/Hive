@@ -56,7 +56,7 @@ class SkinConfigs
             'apiTimeout' => 5,
             'providerId' => 1002,
             'partnerId'  => 1,
-        ],
+        ]
     ];
 
     /**

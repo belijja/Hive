@@ -14,18 +14,19 @@ use Pgda\Fields\UField;
 
 class AbstractMessage
 {
-    protected $aamsGioco;
-    protected $aamsGiocoId;
+    private $aamsGioco;
+    private $aamsGiocoId;
+    protected $messageId;
 
-    protected $stack = [];
-    protected $positionEnds = [];
+    private $stack = [];
+    private $positionEnds = [];
 
-    protected $transactionCode;
-    protected $binaryMessage;
-    protected $headerMessageEncoded;
-    protected $bodyMessageEncoded;
-    protected $headerMessageDecoded;
-    protected $bodyMessageDecoded;
+    private $transactionCode;
+    private $binaryMessage;
+    private $headerMessageEncoded;
+    private $bodyMessageEncoded;
+    private $headerMessageDecoded;
+    private $bodyMessageDecoded;
 
     public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix)
     {
@@ -42,7 +43,7 @@ class AbstractMessage
     {
         $this->prepare();
         $this->writeBody($this);
-        $this->writeHeader();
+        //$this->writeHeader();
     }
 
     private function writeBody($message)
@@ -132,7 +133,6 @@ class AbstractMessage
         $this->stack[] = $field;
         $actualPosition = count($this->stack) - 1;
         if (!empty ($this->positionEnds)) {
-
             $this->positionEnds [$actualPosition] = $this->positionEnds [$actualPosition - 1] + $field->typeLength;
         } else {
             $this->positionEnds [$actualPosition] = $field->typeLength;

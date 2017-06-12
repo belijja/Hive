@@ -11,7 +11,7 @@ namespace Configs;
 
 use Helpers\ConfigHelpers\ConfigManager;
 
-class ISBetsCodes
+class SKSCodes
 {
 
     private static $countryCodes = [

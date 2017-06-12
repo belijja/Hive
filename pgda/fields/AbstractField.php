@@ -12,7 +12,7 @@ namespace Pgda\Fields;
 abstract class AbstractField
 {
     public $typeLength;
-    protected $name;
+    protected $name;//these protected variables are added because there is no extending of stdClass due to dynamically adding variables
     protected $value;
     protected $invoke;
     protected $returnVariableName;
@@ -24,15 +24,15 @@ abstract class AbstractField
     const int = 'N';        //4 Byte Int
     const bigint = 'NN';    //8 Byte Int
 
-    protected static $c = 1;
-    protected static $A = null;
-    protected static $n = 2;
-    protected static $N = 4;
-    protected static $NN = 8;
+    private static $c = 1;
+    private static $A = null;
+    private static $n = 2;
+    private static $N = 4;
+    private static $NN = 8;
 
     protected function setTypeLength($type, $length)
     {
-        $this->typeLength = $type;
+        $this->typeLength = self::$$type;
         if (empty($this->typeLength)) {
             $this->typeLength = $length;
         }

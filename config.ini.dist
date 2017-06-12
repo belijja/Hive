@@ -13,8 +13,8 @@ pass =
 [WSDL]
 wsdlCacheDir =
 
-[ISBETS]
-localProviderId =
+[SKS]
+localPartnerId =
 apiAccount =
 apiPassword =
 apiUri =
@@ -42,5 +42,6 @@ sessionLogDir =
 
 [PGDA]
 sessionDuration =
+headerLength =
 
 
