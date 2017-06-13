@@ -12,8 +12,39 @@ namespace Pgda\Messages;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 
-class AbstractMessage
+class AbstractMessage implements \Iterator
 {
+    private $position = 0;
+    private $errorMessage = [
+        'write' => [],
+        'read'  => []
+    ];
+
+    public function current()
+    {
+        return $this->stack [$this->position];
+    }
+
+    public function key()
+    {
+        return $this->position;
+    }
+
+    public function next()
+    {
+        $this->position++;
+    }
+
+    public function rewind()
+    {
+        $this->position = 0;
+    }
+
+    public function valid()
+    {
+        return isset ($this->stack [$this->position]);
+    }
+
     private $aamsGioco;
     private $aamsGiocoId;
     protected $messageId;
@@ -43,11 +74,15 @@ class AbstractMessage
     {
         $this->prepare();
         $this->writeBody($this);
-        //$this->writeHeader();
+        //$this->writeHeader();continue here
     }
 
-    private function writeBody($message)
-    {//continue
+    /**
+     * @param AbstractMessage $message
+     * @return string
+     */
+    private function writeBody(AbstractMessage $message): string
+    {
         $errorMessage = ["\nPacking: "];
         $types = "";
         $values = [];
@@ -55,12 +90,11 @@ class AbstractMessage
         foreach ($message as $fieldPosition => $field) {
             $errorMessage[] = $field->name . " = " . $field->value;
             if ($field->invoke === PField::bigint) {
-                //create real 8 Byte String of Big Int
+                //create real 8 byte string of big int
                 $stringBinaryBigInt = $this->write64BitIntegers($field->value);
                 //set presence of Big Int in Position $fieldPosition with their binary Calculated Value
                 $array64Bits[$fieldPosition] = $stringBinaryBigInt;
-                //we have also to create 2 fake 4 Bytes int
-                //to pass to PHP Pack() function to reserve a 8 Byte space
+                //create 2 fake 4 bytes int
                 //fake hWord
                 $fakeHighWord = 0x00;
                 //fake loWord
@@ -74,14 +108,25 @@ class AbstractMessage
         }
         $binaryString = call_user_func_array("pack", array_merge([$types], $values));
 
-        //now replace the Fake Big Int With the real calculated
+        //now replace the fake big int with the real calculated
         foreach ($array64Bits as $fieldPos => $binaryValue) {
             $binaryString = substr_replace($binaryString, $binaryValue, $message->getPositionField($fieldPos), 8);
         }
-
-        $this->errorMessage['_write'] [] = $errorMessage;
-
+        $this->errorMessage['write'][] = $errorMessage;
         return $binaryString;
+    }
+
+    /**
+     * @param int $fieldNum
+     * @return int
+     */
+    public function getPositionField(int $fieldNum) : int
+    {
+        $fieldNum = intval($fieldNum);
+        if (!array_key_exists($fieldNum, $this->positionEnds)) {
+            throw new \OutOfBoundsException("Can't find a field in Position $fieldNum - Error in: " . __METHOD__ . " on line " . __LINE__);
+        }
+        return $this->positionEnds[$fieldNum] - ($this->stack[$fieldNum]->typeLength);
     }
 
     private function write64BitIntegers($bigIntValue)
@@ -93,7 +138,6 @@ class AbstractMessage
         } else {
             throw new \LengthException('Write error. This Processor can not handle 64bit integers without loss of significant digits. Error in: ' . __METHOD__ . " on line " . __LINE__);
         }
-
         return $binaryString;
 
     }

@@ -12,10 +12,10 @@ namespace Pgda\Fields;
 abstract class AbstractField
 {
     public $typeLength;
-    protected $name;//these protected variables are added because there is no extending of stdClass due to dynamically adding variables
-    protected $value;
-    protected $invoke;
-    protected $returnVariableName;
+    public $name;//these protected variables are added because there is no extending of stdClass due to dynamically adding variables
+    public $value;
+    public $invoke;
+    public $returnVariableName;
 
     const char = 'c';        //unsigned char
     const string = 'A';    //string or variable string

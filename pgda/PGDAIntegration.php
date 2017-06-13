@@ -13,6 +13,7 @@ use Configs\PgdaCodes;
 use Helpers\ConfigHelpers\ConfigManager;
 use Models\PgdaModels;
 use Pgda\Messages\Message400;
+use Zend\Stdlib\Exception\LogicException;
 
 class PGDAIntegration
 {
@@ -80,7 +81,11 @@ class PGDAIntegration
         } else {
             $message->setAttribute('BON', 'B');
         }
-        $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
+        try {
+            $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
+        } catch (\Exception $exception) {
+            throw new \SoapFault('PGDA_ERROR', $exception->getMessage());
+        }
         return [];
     }
 
