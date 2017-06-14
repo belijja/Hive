@@ -51,14 +51,14 @@ class PgdaCodes
     ];
 
     private static $pgdaAamsPrimary = [
-        'conc'             => 15242,
-        'fsc'              => 70,
-        'aamsMaxSendTries' => 3
+        'conc'         => 15242,
+        'fsc'          => 70,
+        'maxSendTries' => 3
     ];
     private static $pgdaAamsDefault = [
-        'conc'             => 15079,
-        'fsc'              => 89,
-        'aamsMaxSendTries' => 3
+        'conc'         => 15079,
+        'fsc'          => 89,
+        'maxSendTries' => 3
     ];
 
     public static function getPgdaAamsCodes(string $pgdaKey): string
