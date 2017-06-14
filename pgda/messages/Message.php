@@ -9,16 +9,28 @@ declare(strict_types = 1);
 
 namespace Pgda\Messages;
 
+use Configs\PgdaCodes;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 
-class AbstractMessage implements \Iterator
+class Message implements \Iterator
 {
     private $position = 0;
     private $errorMessage = [
         'write' => [],
         'read'  => []
     ];
+    protected $messageId;
+    private $aamsGioco;
+    private $aamsGiocoId;
+    private $stack = [];
+    private $positionEnds = [];
+    private $transactionCode;
+    private $binaryMessage;
+    private $headerMessageEncoded;
+    private $bodyMessageEncoded;
+    private $headerMessageDecoded;
+    private $bodyMessageDecoded;
 
     public function current()
     {
@@ -45,20 +57,6 @@ class AbstractMessage implements \Iterator
         return isset ($this->stack [$this->position]);
     }
 
-    private $aamsGioco;
-    private $aamsGiocoId;
-    protected $messageId;
-
-    private $stack = [];
-    private $positionEnds = [];
-
-    private $transactionCode;
-    private $binaryMessage;
-    private $headerMessageEncoded;
-    private $bodyMessageEncoded;
-    private $headerMessageDecoded;
-    private $bodyMessageDecoded;
-
     public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix)
     {
         $this->setTransactionCode($transactionCode);
@@ -73,15 +71,55 @@ class AbstractMessage implements \Iterator
     private function buildMessage(): void
     {
         $this->prepare();
-        $this->writeBody($this);
-        //$this->writeHeader();continue here
+        $this->bodyMessageEncoded = $this->writeBody($this);
+        $this->headerMessageEncoded = $this->writeHeader();
+    }
+
+    private function writeHeader()
+    {
+        if (is_null($this->bodyMessageEncoded)) {
+            throw new \LogicException("Can not write header packet while bodyMessage is not written. Error in " . __METHOD__ . " on line: " . __LINE__);
+        }
+        if (empty($this->messageId)) {
+            throw new \LogicException ("Can not write header packet while message Id is not defined. Error in " . __METHOD__ . " on line: " . __LINE__);
+        }
+        if ($this->messageId >= 800) {
+            $this->aamsGiocoId = 0;
+            $this->aamsGioco = 0;
+        } else {
+            if (empty ($this->aamsGiocoId)) {
+                throw new \LogicException ("Can not write header packet while aamsGiocoId is not defined. Error in " . __METHOD__ . " on line: " . __LINE__);
+            }
+            if (is_null($this->aamsGioco)) {
+                throw new \LogicException ("Can not write header packet while aamsGioco is not defined Error in " . __METHOD__ . " on line: " . __LINE__);
+            }
+        }
+        error_log("AAMS_CONC: " . PgdaCodes::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaCodes::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
+        $this->attach(PField::set("Num. vers. Protoc.", PField::byte, 2));
+
+        $this->attach(PField::set("Cod. Forn. Servizi", PField::int, AAMS_FSC));
+        $this->attach(PField::set("Cod. Conc. Trasm.", PField::int, AAMS_CONC));
+        $this->attach(PField::set("Cod. Conc. Propo.", PField::int, AAMS_CONC));
+        $this->attach(PField::set("Codice Gioco.", PField::int, $this->aamsGioco));
+        $this->attach(PField::set("Cod. Tipo Gioco.", PField::byte, $this->aamsGiocoId));
+        $this->attach(PField::set("Tipo Mess.", PField::string, $this->messageId, 4));
+        $this->attach(PField::set("Codice transazione", PField::string, $this->getTransactionCode(), 16));
+        $this->attach(PField::set("Lunghezza Body", PField::int, strlen($this->bodyMessageEncoded)));
+    }
+
+    public function getTransactionCode()
+    {
+        if (empty($this->transactionCode)) {
+            throw new \UnexpectedValueException('Tried to get an EMPTY Transaction Code. Use ::setTransactionCode() First. Error on: ' . __METHOD__ . " in " . __FILE__);
+        }
+        return $this->transactionCode;
     }
 
     /**
-     * @param AbstractMessage $message
+     * @param Message $message
      * @return string
      */
-    private function writeBody(AbstractMessage $message): string
+    private function writeBody(Message $message): string
     {
         $errorMessage = ["\nPacking: "];
         $types = "";
@@ -91,7 +129,7 @@ class AbstractMessage implements \Iterator
             $errorMessage[] = $field->name . " = " . $field->value;
             if ($field->invoke === PField::bigint) {
                 //create real 8 byte string of big int
-                $stringBinaryBigInt = $this->write64BitIntegers($field->value);
+                $stringBinaryBigInt = $this->write64BitIntegers((string)$field->value);
                 //set presence of Big Int in Position $fieldPosition with their binary Calculated Value
                 $array64Bits[$fieldPosition] = $stringBinaryBigInt;
                 //create 2 fake 4 bytes int
@@ -120,16 +158,19 @@ class AbstractMessage implements \Iterator
      * @param int $fieldNum
      * @return int
      */
-    public function getPositionField(int $fieldNum) : int
+    public function getPositionField(int $fieldNum): int
     {
-        $fieldNum = intval($fieldNum);
         if (!array_key_exists($fieldNum, $this->positionEnds)) {
             throw new \OutOfBoundsException("Can't find a field in Position $fieldNum - Error in: " . __METHOD__ . " on line " . __LINE__);
         }
         return $this->positionEnds[$fieldNum] - ($this->stack[$fieldNum]->typeLength);
     }
 
-    private function write64BitIntegers($bigIntValue)
+    /**
+     * @param string|null $bigIntValue
+     * @return string
+     */
+    private function write64BitIntegers(string $bigIntValue = null): string
     {
         if (PHP_INT_SIZE > 4) {
             settype($bigIntValue, 'integer');

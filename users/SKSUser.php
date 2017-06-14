@@ -11,7 +11,7 @@ namespace Users;
 
 use BackOffice\Bonus;
 
-class SKSUser extends AbstractUsers
+class SKSUser extends User
 {
     /**
      * SKSUser constructor.

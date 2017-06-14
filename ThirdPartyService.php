@@ -30,7 +30,7 @@ use Partners\SKSPartner;
 use Partners\ThirdPartyIntegrationPartner;
 use Partners\AbstractPartner;
 //users
-use Users\ServiceUsers;
+use Users\ServiceUser;
 //backOffice
 use BackOffice\Core;
 use BackOffice\Bonus;
@@ -61,12 +61,12 @@ class ThirdPartyService
      * @param ParamManager $paramManager
      * @param AbstractPartner $SKS
      * @param AbstractPartner $thirdPartyIntegration
-     * @param ServiceUsers $serviceUsers
+     * @param ServiceUser $serviceUsers
      * @param SessionManager $sessionManager
      * @param Core $core
      * @param NetentProvider $NetentProvider
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartner $SKS, AbstractPartner $thirdPartyIntegration, ServiceUsers $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartner $SKS, AbstractPartner $thirdPartyIntegration, ServiceUser $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
@@ -208,7 +208,7 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(), new ThirdPartyIntegrationPartner(), new ServiceUsers(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(), new ThirdPartyIntegrationPartner(), new ServiceUser(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check

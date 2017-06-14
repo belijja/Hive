@@ -11,7 +11,7 @@ namespace Pgda\Messages;
 
 use Pgda\Fields\PField;
 
-class Message400 extends AbstractMessage
+class Message400 extends Message
 {
     private $attributeMultiplies = [];
     private $arrayStruct = [

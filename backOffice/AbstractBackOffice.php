@@ -12,7 +12,7 @@ namespace BackOffice;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 
-class AbstractBackOffice
+abstract class AbstractBackOffice
 {
     protected $db;
 

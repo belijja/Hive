@@ -13,7 +13,6 @@ use Configs\PgdaCodes;
 use Helpers\ConfigHelpers\ConfigManager;
 use Models\PgdaModels;
 use Pgda\Messages\Message400;
-use Zend\Stdlib\Exception\LogicException;
 
 class PGDAIntegration
 {
@@ -45,8 +44,6 @@ class PGDAIntegration
 
 
     /**
-     * This message is being sent when session is started.
-     *
      * @param int $aamsGameCode
      * @param int $aamsGameType
      * @param string $sessionId
@@ -54,6 +51,7 @@ class PGDAIntegration
      * @param bool|null $isFun
      * @param bool|null $gameTesting
      * @return array
+     * @throws \SoapFault
      */
     //start of session message 400
     public function casinoCreate(int $aamsGameCode, int $aamsGameType, string $sessionId, string $datetime, bool $isFun = null, bool $gameTesting = null): array
@@ -76,12 +74,12 @@ class PGDAIntegration
         $message->setEndYear($endDate['year']);
         $message->setEndMonth($endDate['mon']);
         $message->setEndDay($endDate['mday']);
-        if ($isFun) {
-            $message->setAttribute('BON', 'F');
-        } else {
-            $message->setAttribute('BON', 'B');
-        }
         try {
+            if ($isFun) {
+                $message->setAttribute('BON', 'F');
+            } else {
+                $message->setAttribute('BON', 'B');
+            }
             $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
         } catch (\Exception $exception) {
             throw new \SoapFault('PGDA_ERROR', $exception->getMessage());

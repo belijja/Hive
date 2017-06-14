@@ -50,6 +50,22 @@ class PgdaCodes
         '780'        => '780'
     ];
 
+    private static $pgdaAamsPrimary = [
+        'conc'             => 15242,
+        'fsc'              => 70,
+        'aamsMaxSendTries' => 3
+    ];
+    private static $pgdaAamsDefault = [
+        'conc'             => 15079,
+        'fsc'              => 89,
+        'aamsMaxSendTries' => 3
+    ];
+
+    public static function getPgdaAamsCodes(string $pgdaKey): string
+    {
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault);
+    }
+
     public static function getPgdaServerPathCodes(string $pgdaKey): string
     {
         return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixDefault);

@@ -12,15 +12,15 @@ namespace Users;
 use BackOffice\Bonus;
 use Configs\GameProviderConfigs;
 
-class UsersFactory
+class UserFactory
 {
     /**
      * @param array $thirdPartyServiceUser
      * @param string $gameProviderId
-     * @return AbstractUsers
+     * @return User
      * @throws \SoapFault
      */
-    public static function getUser(array $thirdPartyServiceUser, string $gameProviderId): AbstractUsers
+    public static function getUser(array $thirdPartyServiceUser, string $gameProviderId): User
     {
         $user = null;
         foreach (GameProviderConfigs::getGameProviderConfigs() as $key => $value) {

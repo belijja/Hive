@@ -13,7 +13,7 @@ use BackOffice\Bonus;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
-use Users\UsersFactory;
+use Users\UserFactory;
 use Pgda\PGDAIntegration;
 
 class NetentProvider
@@ -79,7 +79,7 @@ class NetentProvider
     private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null): array
     {
         $returnValue = [];
-        $user = UsersFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
+        $user = UserFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
         /*if (isset($netentSessionId)) {
             $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token because there can't be two same cashier tokens
             if ($isCashierTokenSet) {

@@ -13,10 +13,10 @@ use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 
 /**
- * Class ServiceUsers
+ * Class ServiceUser
  * @package Users
  */
-class ServiceUsers
+class ServiceUser
 {
     /**
      * @param array $params

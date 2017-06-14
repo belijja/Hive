@@ -13,7 +13,7 @@ use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use BackOffice\Bonus;
 
-class AbstractUsers
+class User
 {
     public $user;
     protected $config;
@@ -32,7 +32,7 @@ class AbstractUsers
     public $gameCode;
 
     /**
-     * AbstractUsers constructor.
+     * User constructor.
      * @param array $user
      * @param array $config
      * @param Bonus $bonus

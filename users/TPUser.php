@@ -11,7 +11,7 @@ namespace Users;
 
 use BackOffice\Bonus;
 
-class TPUser extends AbstractUsers
+class TPUser extends User
 {
     /**
      * TPUser constructor.
