@@ -179,7 +179,7 @@ class ThirdPartyService
         } catch (\SoapFault $soapFault) {
             switch ($soapFault->faultcode) {
                 case '0':
-                    $response->resultCode = 0;//unspecified error//delete this
+                    $response->resultCode = 0;//unspecified error
                 break;
                 case '-1':
                     $response->resultCode = -1;//invalid game ID
