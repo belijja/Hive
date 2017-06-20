@@ -32,6 +32,7 @@ class Message implements \Iterator
     private $headerMessageDecoded;
     private $bodyMessageDecoded;
 
+
     public function current()
     {
         return $this->stack [$this->position];
