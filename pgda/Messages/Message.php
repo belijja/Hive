@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Pgda\Messages;
 
 use Configs\PgdaCodes;
+use Pgda\Fields\AbstractField;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 
@@ -57,12 +58,46 @@ class Message implements \Iterator
         return isset ($this->stack [$this->position]);
     }
 
+    /**
+     * @return string
+     */
+    private function getHeader(): string
+    {
+        return $this->headerMessageEncoded;
+    }
+
+    /**
+     * @return string
+     */
+    private function getBody(): string
+    {
+        return $this->bodyMessageEncoded;
+    }
+
     public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix)
     {
         $this->setTransactionCode($transactionCode);
         $this->setAamsGameCode($aamsGameCode);
         $this->setAamsGameType($aamsGameType);
         $this->buildMessage();
+        $binaryMessage = $this->getHeader() . $this->getBody();
+        $this->sendMessageRecursive($binaryMessage, $this->getBody());
+    }
+
+    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, int $cnt = 0)
+    {
+        $cnt++;
+        try {
+            $recordMessage = ($this->sendMessage($binaryMessage));
+        } catch (\Exception $e) {
+
+        }
+        //$this->sendMessageRecursive($binaryMessage, $oldEncodedBody, $cnt);
+    }
+
+    private function sendMessage($binaryMessage)
+    {
+
     }
 
     /**
@@ -72,7 +107,7 @@ class Message implements \Iterator
     {
         $this->prepare();
         $this->bodyMessageEncoded = $this->writeBody($this);
-        $this->headerMessageEncoded = $this->writeHeader();//continue here
+        $this->headerMessageEncoded = $this->writeHeader();
     }
 
     private function writeHeader()
@@ -211,7 +246,7 @@ class Message implements \Iterator
         $this->aamsGiocoId = $aamsGameType;
     }
 
-    protected function attach($field)
+    protected function attach(AbstractField $field): void
     {
         if (!$field instanceof PField && !$field instanceof UField) {
             throw new \BadMethodCallException('Error, ' . __METHOD__ . " can only accept instances of PField and UField on line: " . __LINE__);
