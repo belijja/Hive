@@ -33,6 +33,22 @@ class Message implements \Iterator
     private $headerMessageDecoded;
     private $bodyMessageDecoded;
 
+    //CommunicationAdapter class properties
+    private static $__Instance = null;
+    public $url;
+    private $HTTPsocket;
+    private $outgoingMessage;
+    private $GAME_TYPE = 2; //1 for Tournaments, 3 for Cash Game ( AAMS protoc. 2 )
+    private $FLUX_METHOD = 2; //modalita' -> //1 condizionata //2 non condizionata //4 Cash Game
+    private $AAMS_GIOCO;
+    private $suffix;
+    const CODICE_RETE = 2;
+    private static $RecursionCounter = 0;
+    //connectionClass class properties
+    private $err = null;
+    private $store = null;
+    private $header = null;
+
     public function current()
     {
         return $this->stack [$this->position];
@@ -81,23 +97,32 @@ class Message implements \Iterator
         $this->setAamsGameType($aamsGameType);
         $this->buildMessage();
         $binaryMessage = $this->getHeader() . $this->getBody();
-        $this->sendMessageRecursive($binaryMessage, $this->getBody());
+        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix);
     }
 
-    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, int $cnt = 0)
+    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, string $serverPathSuffix, int $cnt = 0)
     {
         $cnt++;
         try {
-            $recordMessage = ($this->sendMessage($binaryMessage));
+            $recordMessage = $this->sendMessage($binaryMessage, $serverPathSuffix);
         } catch (\Exception $e) {
 
         }
         //$this->sendMessageRecursive($binaryMessage, $oldEncodedBody, $cnt);
     }
 
-    private function sendMessage($binaryMessage)
+    private function sendMessage(string $binaryMessage, string $serverPathSuffix)
     {
+        $signedData = $this->signData($binaryMessage);
+    }
 
+    private function signData($binaryMessage)//continue here
+    {
+        $binaryIn = tempnam(sys_get_temp_dir(), uniqid() . '_AAMSmsg_' . md5(microtime()));
+        $signedOut = tempnam(sys_get_temp_dir(), uniqid() . '_Signed_AAMSmsg_' . md5(microtime()));
+        file_put_contents($binaryIn, $binaryMessage);
+
+        $strKey = openssl_pkey_get_private('file://' . PgdaCodes::getPgdaCertificates('private'), PgdaCodes::getPgdaCertificates('privatePassword'));
     }
 
     /**

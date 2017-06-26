@@ -34,20 +34,28 @@ class PgdaCodes
         'sessionBalance' => 59000
     ];
 
-    private static $pgdaServerPathSuffixPrimary = [//primary and default are the same?
-        'cash'       => 'SH',
-        'tournament' => 'TR',
-        'casino'     => 'QF',
-        '580'        => '580',
-        '780'        => '780'
+    private static $pgdaServerPrimary = [//primary and default are the same?
+        'scheme'         => 'http',
+        'address'        => '81.2.205.160',
+        'port'           => '80',
+        'path'           => '/GiochiDiAbilitaV2_1/ServletFactoryFirma_V213_',
+        'cashPath'       => 'SH',
+        'tournamentPath' => 'TR',
+        'casinoPath'     => 'QF',
+        '580Path'        => '580',
+        '780Path'        => '780'
     ];
 
-    private static $pgdaServerPathSuffixDefault = [
-        'cash'       => 'SH',
-        'tournament' => 'TR',
-        'casino'     => 'QF',
-        '580'        => '580',
-        '780'        => '780'
+    private static $pgdaServerDefault = [
+        'scheme'         => 'http',
+        'address'        => '81.2.205.160',
+        'port'           => '80',
+        'path'           => '/GiochiDiAbilitaV2_1/ServletFactoryFirma_V213_',
+        'cashPath'       => 'SH',
+        'tournamentPath' => 'TR',
+        'casinoPath'     => 'QF',
+        '580Path'        => '580',
+        '780Path'        => '780'
     ];
 
     private static $pgdaAamsPrimary = [
@@ -61,14 +69,30 @@ class PgdaCodes
         'maxSendTries' => 3
     ];
 
-    public static function getPgdaAamsCodes(string $pgdaKey): string
+    private static $pgdaCertificatesPrimary = [
+        'private'         => 'pgda/Certificates/firma-2.pem',
+        'privatePassword' => 'sks_test',
+        'sogeiPublic'     => 'pgda/Certificates/sogei.cer'
+    ];
+    private static $pgdaCertificatesDefault = [
+        'private'         => 'pgda/Certificates/firma_sks_test.pem',
+        'privatePassword' => 'sks_test',
+        'sogeiPublic'     => 'pgda/Certificates/sogei.cer'
+    ];
+
+    public static function getPgdaCertificates(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault);
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesDefault);
     }
 
-    public static function getPgdaServerPathCodes(string $pgdaKey): string
+    public static function getPgdaAamsCodes(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPathSuffixDefault);
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault);
+    }
+
+    public static function getPgdaServerCodes(string $pgdaKey): string
+    {
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerDefault);
     }
 
     /**

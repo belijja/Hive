@@ -33,11 +33,11 @@ class PGDAIntegration
         $this->pgdaModels->prefixCasinoHistory = PgdaCodes::getPgdaCasinoCodes('history');
         $this->pgdaModels->prefixCasinoSessionBalance = PgdaCodes::getPgdaCasinoCodes('sessionBalance');
 
-        $this->pgdaModels->serverPathSuffixCash = PgdaCodes::getPgdaServerPathCodes('cash');
-        $this->pgdaModels->serverPathSuffixTournament = PgdaCodes::getPgdaServerPathCodes('tournament');
-        $this->pgdaModels->serverPathSuffixCasino = PgdaCodes::getPgdaServerPathCodes('casino');
-        $this->pgdaModels->serverPathSuffix580 = PgdaCodes::getPgdaServerPathCodes('580');
-        $this->pgdaModels->serverPathSuffix780 = PgdaCodes::getPgdaServerPathCodes('780');
+        $this->pgdaModels->serverPathSuffixCash = PgdaCodes::getPgdaServerCodes('cashPath');
+        $this->pgdaModels->serverPathSuffixTournament = PgdaCodes::getPgdaServerCodes('tournamentPath');
+        $this->pgdaModels->serverPathSuffixCasino = PgdaCodes::getPgdaServerCodes('casinoPath');
+        $this->pgdaModels->serverPathSuffix580 = PgdaCodes::getPgdaServerCodes('580Path');
+        $this->pgdaModels->serverPathSuffix780 = PgdaCodes::getPgdaServerCodes('780Path');
     }
 
 
