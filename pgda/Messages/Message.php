@@ -121,8 +121,26 @@ class Message implements \Iterator
         $binaryIn = tempnam(sys_get_temp_dir(), uniqid() . '_AAMSmsg_' . md5(microtime()));
         $signedOut = tempnam(sys_get_temp_dir(), uniqid() . '_Signed_AAMSmsg_' . md5(microtime()));
         file_put_contents($binaryIn, $binaryMessage);
-
-        $strKey = openssl_pkey_get_private('file://' . PgdaCodes::getPgdaCertificates('private'), PgdaCodes::getPgdaCertificates('privatePassword'));
+        $stringKey = openssl_pkey_get_private('file://' . PgdaCodes::getPgdaCertificates('private'), PgdaCodes::getPgdaCertificates('privatePassword'));
+        openssl_pkcs7_sign($binaryIn, $signedOut, file_get_contents(PgdaCodes::getPgdaCertificates('private')), $stringKey, [], PKCS7_BINARY | PKCS7_NOINTERN | PKCS7_NOCERTS);
+        $returnString = file_get_contents($signedOut);
+        //Remove all mime headers from signed message
+        $arrayMsg = explode("\n", $returnString);
+        foreach ($arrayMsg as $key => $strings) {
+            if ($strings == '') {
+                unset($arrayMsg[$key]);
+            }
+            if (stripos($strings, 'content') !== false) {
+                unset($arrayMsg[$key]);
+            }
+            if (stripos($strings, 'mime') !== false) {
+                unset($arrayMsg[$key]);
+            }
+        }
+        $returnString = base64_decode(implode("\n", $arrayMsg));
+        unlink($binaryIn);
+        unlink($signedOut);
+        return $returnString;
     }
 
     /**
