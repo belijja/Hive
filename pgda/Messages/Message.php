@@ -46,7 +46,7 @@ class Message implements \Iterator
     private static $RecursionCounter = 0;
     //connectionClass class properties
     private $err = null;
-    private $store = null;
+    private $store;
     private $header = null;
 
     public function current()
@@ -90,6 +90,11 @@ class Message implements \Iterator
         return $this->bodyMessageEncoded;
     }
 
+    private function getMessage(): string
+    {
+        return $this->store;
+    }
+
     public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix)
     {
         $this->setTransactionCode($transactionCode);
@@ -104,19 +109,69 @@ class Message implements \Iterator
     {
         $cnt++;
         try {
-            $recordMessage = $this->sendMessage($binaryMessage, $serverPathSuffix);
-        } catch (\Exception $e) {
-
+            if ($this->sendMessage($binaryMessage, $serverPathSuffix)) {
+                $recordMessage = $this->getMessage();
+            } else {
+                $recordMessage = false;
+            }
+        } catch (\Exception $exception) {
+            switch ($exception->getCode()) {
+                case -42: // header not found
+                    error_log("PGDA header not found: " . $exception->getMessage());
+                    if ($cnt <= 3) {
+                        //$this->setTransactionCode(get_pgda_transactionid(PREFIX_RETRY, (int)(microtime(true) * 10000)));
+                    }
+            }
         }
         //$this->sendMessageRecursive($binaryMessage, $oldEncodedBody, $cnt);
     }
 
-    private function sendMessage(string $binaryMessage, string $serverPathSuffix)
+    /**
+     * @param string $binaryMessage
+     * @param string $serverPathSuffix
+     * @return bool
+     * @throws \Exception
+     */
+    private function sendMessage(string $binaryMessage, string $serverPathSuffix): bool
     {
         $signedData = $this->signData($binaryMessage);
+        $this->url = PgdaCodes::getPgdaServerCodes('scheme') . "://" . PgdaCodes::getPgdaServerCodes('address') . ":" . PgdaCodes::getPgdaServerCodes('port') . PgdaCodes::getPgdaServerCodes('path') . $serverPathSuffix;
+        $curl = curl_init($this->url);
+        $options = [
+            CURLOPT_POSTFIELDS     => $signedData,
+            CURLOPT_HEADER         => false,
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+        ];
+        curl_setopt_array($curl, $options);
+        $response = curl_exec($curl);
+        $transferInfo = curl_getinfo($curl);
+        curl_close($curl);
+        if ($transferInfo['http_code'] != 200) {
+            throw new \Exception("HTTP status code " . $transferInfo['http_code'], $transferInfo['http_code']);
+        }
+        $this->store = $this->extract($response, $binaryMessage);
+        return true;
     }
 
-    private function signData($binaryMessage)//continue here
+    /**
+     * @param string $curlResponse
+     * @param string $binaryMessage
+     * @return string
+     * @throws \Exception
+     */
+    private function extract(string $curlResponse, string $binaryMessage): string
+    {
+        $shortBinaryMessage = substr($binaryMessage, 0, 38);
+        $i = strpos($curlResponse, $shortBinaryMessage);
+        if ($i === false) {
+            throw new \Exception("Header not found in reply. MESSAGE: $curlResponse", -42);
+        }
+        $blen = ord($curlResponse{$i + 38}) * 256 * 256 * 256 + ord($curlResponse{$i + 39}) * 256 * 256 + ord($curlResponse{$i + 40}) * 256 + ord($curlResponse{$i + 41});
+        return substr($curlResponse, $i, 42 + $blen);
+    }
+
+    private function signData($binaryMessage)
     {
         $binaryIn = tempnam(sys_get_temp_dir(), uniqid() . '_AAMSmsg_' . md5(microtime()));
         $signedOut = tempnam(sys_get_temp_dir(), uniqid() . '_Signed_AAMSmsg_' . md5(microtime()));
@@ -127,13 +182,7 @@ class Message implements \Iterator
         //Remove all mime headers from signed message
         $arrayMsg = explode("\n", $returnString);
         foreach ($arrayMsg as $key => $strings) {
-            if ($strings == '') {
-                unset($arrayMsg[$key]);
-            }
-            if (stripos($strings, 'content') !== false) {
-                unset($arrayMsg[$key]);
-            }
-            if (stripos($strings, 'mime') !== false) {
+            if (($strings == '') || (stripos($strings, 'content') !== false) || (stripos($strings, 'mime') !== false)) {
                 unset($arrayMsg[$key]);
             }
         }
