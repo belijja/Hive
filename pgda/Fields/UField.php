@@ -12,8 +12,31 @@ namespace Pgda\Fields;
 class UField extends AbstractField
 {
 
-    public static function set()
+    protected function __construct($name, $type, $returnVariable, $length)
     {
 
+        $class = new \ReflectionClass($this);
+        $constants = $class->getConstants();
+
+        if (array_search($type, $constants) === false) {
+            throw new \BadMethodCallException("Invalid Type '$type'  in: " . __METHOD__ . " in line: " . __LINE__);
+        }
+        if (parent::string === $type && empty($length)) {
+            throw new \BadMethodCallException('Lenght CAN NOT BE EMPTY for Type String in: ' . __METHOD__ . " in line: " . __LINE__);
+        }
+        $this->name = str_pad($name, 30, " ", STR_PAD_RIGHT);
+        if (!empty($length) && parent::string === $type) {
+            $this->invoke = $type . $length;
+        } else {
+            $this->invoke = $type;
+        }
+        $this->setTypeLength($type, $length);
+        $this->returnVariableName = $returnVariable;
+
+    }
+
+    public static function set($name, $type, $returnVariable, $length = null)
+    {
+        return new uField($name, $type, $returnVariable, $length);
     }
 }

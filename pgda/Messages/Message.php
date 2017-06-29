@@ -14,6 +14,7 @@ use Pgda\Fields\AbstractField;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 use Pgda\PGDAIntegration;
+use Helpers\ConfigHelpers\ConfigManager;
 
 class Message implements \Iterator
 {
@@ -371,6 +372,46 @@ class Message implements \Iterator
         } else {
             $this->positionEnds [$actualPosition] = $field->typeLength;
         }
+    }
+
+    /**
+     * @return void
+     */
+    protected function resetStack(): void
+    {
+        $this->position = 0;
+        $this->stack = [];
+        $this->positionEnds = [];
+    }
+
+    protected function readHeader()
+    {
+        $headerPart = substr($this->binaryMessage, 0, (int)$this->getHeaderLength());
+        $this->headerMessageDecoded = $this->getHeaderMessageDecoded($headerPart);
+    }
+
+    private function getHeaderLength()
+    {
+        if (ConfigManager::getPgda('headerLength') == null) {
+            throw new \UnexpectedValueException('Can not use a message with header length not set.');
+        }
+        return ConfigManager::getPgda('headerLength');
+    }
+
+    private function getHeaderMessageDecoded(string $binaryHeader)
+    {
+        $messageHeader = new Message();
+        $messageHeader->attach(UField::set("Num. vers. Protoc.", UField::byte, '_numProtocollo'));
+        $messageHeader->attach(UField::set("Cod. Forn. Servizi", UField::int, '_codFornServ'));
+        $messageHeader->attach(UField::set("Cod. Conc. Trasm.", UField::int, '_codConcTrasm'));
+        $messageHeader->attach(UField::set("Cod. Conc. Propo.", UField::int, '_codConcProp'));
+        $messageHeader->attach(UField::set("Codice Gioco.", UField::int, '_codiceGioco'));
+        $messageHeader->attach(UField::set("Cod. Tipo Gioco.", UField::byte, '_codiceTipoGioco'));
+        $messageHeader->attach(UField::set("Tipo Mess.", UField::string, '_msgID', 4));
+        $messageHeader->attach(UField::set("Codice transazione", UField::string, '_codTransazione', 16));
+        $messageHeader->attach(UField::set("Lunghezza Body", UField::int, '_bodyLength'));
+
+        return $this->read($binaryHeader, $messageHeader);//continue here
     }
 
 }
