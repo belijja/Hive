@@ -92,7 +92,7 @@ class PGDAIntegration
      * @param string $id
      * @return string
      */
-    private function getPgdaTransactionId(string $prefix, string $id): string
+    public static function getPgdaTransactionId(string $prefix, string $id): string
     {
         $p = pack("V", $prefix);
         for ($i = 0; $i < 8; $i++) {

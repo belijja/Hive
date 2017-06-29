@@ -80,16 +80,49 @@ class PgdaCodes
         'sogeiPublic'     => 'pgda/Certificates/sogei.cer'
     ];
 
+    private static $pgdaPrefixPrimary = [
+        'updateSessionEnd' => 81000,
+        'sendModuleList'   => 83000,
+        'retry'            => 42424242
+    ];
+
+    private static $pgdaPrefixDefault = [
+        'updateSessionEnd' => 81000,
+        'sendModuleList'   => 83000,
+        'retry'            => 42424242
+    ];
+
+    /**
+     * @param string $pgdaKey
+     * @return string
+     */
+    public static function getPgdaPrefix(string $pgdaKey): string
+    {
+        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixDefault);
+    }
+
+    /**
+     * @param string $pgdaKey
+     * @return string
+     */
     public static function getPgdaCertificates(string $pgdaKey): string
     {
         return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesDefault);
     }
 
+    /**
+     * @param string $pgdaKey
+     * @return string
+     */
     public static function getPgdaAamsCodes(string $pgdaKey): string
     {
         return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault);
     }
 
+    /**
+     * @param string $pgdaKey
+     * @return string
+     */
     public static function getPgdaServerCodes(string $pgdaKey): string
     {
         return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerDefault);

@@ -13,6 +13,7 @@ use Configs\PgdaCodes;
 use Pgda\Fields\AbstractField;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
+use Pgda\PGDAIntegration;
 
 class Message implements \Iterator
 {
@@ -83,6 +84,15 @@ class Message implements \Iterator
     }
 
     /**
+     * @param string $binaryResponse
+     * @return void
+     */
+    private function setBinaryResponse(string $binaryResponse): void
+    {
+        $this->binaryMessage = $binaryResponse;
+    }
+
+    /**
      * @return string
      */
     private function getBody(): string
@@ -109,21 +119,32 @@ class Message implements \Iterator
     {
         $cnt++;
         try {
-            if ($this->sendMessage($binaryMessage, $serverPathSuffix)) {
-                $recordMessage = $this->getMessage();
-            } else {
-                $recordMessage = false;
-            }
+            $this->sendMessage($binaryMessage, $serverPathSuffix);
+            $recordMessage = $this->getMessage();
         } catch (\Exception $exception) {
             switch ($exception->getCode()) {
-                case -42: // header not found
+                case -42:// header not found
                     error_log("PGDA header not found: " . $exception->getMessage());
                     if ($cnt <= 3) {
-                        //$this->setTransactionCode(get_pgda_transactionid(PREFIX_RETRY, (int)(microtime(true) * 10000)));
+                        $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId(PgdaCodes::getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
+                        $this->writeHeader();
+                        $binaryMessage = $this->getHeader() . $this->getBody();
+                        sleep(1);
+                        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix, $cnt);
                     }
+                break;
+                default:// HTTP error
+                    error_log("PGDA exception, HTTP CODE: " . $exception->getCode());
+                    if ($cnt <= 3) {
+                        sleep(1);
+                        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix, $cnt);
+                    }
+                break;
             }
+            return -42;
         }
-        //$this->sendMessageRecursive($binaryMessage, $oldEncodedBody, $cnt);
+        $this->setBinaryResponse($recordMessage);
+        $this->decodeResponse();
     }
 
     /**
@@ -167,8 +188,8 @@ class Message implements \Iterator
         if ($i === false) {
             throw new \Exception("Header not found in reply. MESSAGE: $curlResponse", -42);
         }
-        $blen = ord($curlResponse{$i + 38}) * 256 * 256 * 256 + ord($curlResponse{$i + 39}) * 256 * 256 + ord($curlResponse{$i + 40}) * 256 + ord($curlResponse{$i + 41});
-        return substr($curlResponse, $i, 42 + $blen);
+        $binaryLength = ord($curlResponse{$i + 38}) * 256 * 256 * 256 + ord($curlResponse{$i + 39}) * 256 * 256 + ord($curlResponse{$i + 40}) * 256 + ord($curlResponse{$i + 41});
+        return substr($curlResponse, $i, 42 + $binaryLength);
     }
 
     private function signData($binaryMessage)

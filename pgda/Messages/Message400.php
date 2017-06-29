@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Pgda\Messages;
 
 use Pgda\Fields\PField;
+use Pgda\Fields\UField;
 
 class Message400 extends Message
 {
@@ -183,6 +184,15 @@ class Message400 extends Message
             $this->attach(PField::set("$code", PField::string, $code, 3));
             $this->attach(PField::set("$code -> $value", PField::string, $value, 16));
         }
+    }
+
+    public function decodeResponse()//continue here
+    {
+        $this->resetStack();
+        $this->attach(UField::set("Esito", UField::shortInt, '_esitoMessaggio'));
+        $this->attach(UField::set("ID Convalida", UField::string, '_idSessConvalida', 16));
+        $this->readHeader();
+        $this->readBody();
     }
 
 }
