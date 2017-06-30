@@ -146,6 +146,7 @@ class Message implements \Iterator
         }
         $this->setBinaryResponse($recordMessage);
         $this->decodeResponse();
+        return $this->getCode();
     }
 
     /**
@@ -333,6 +334,18 @@ class Message implements \Iterator
 
     }
 
+    protected function read64bitInteger($binaryValue)
+    {
+
+        if (PHP_INT_SIZE > 4) {
+
+            return ord($binaryValue[0]) << 56 | ord($binaryValue[1]) << 48 | ord($binaryValue[2]) << 40 | ord($binaryValue[3]) << 32 | ord($binaryValue[4]) << 24 | ord($binaryValue[5]) << 16 | ord($binaryValue[6]) << 8 | ord($binaryValue[7]);
+
+        } else {
+            throw new \LengthException('Read error. This processor can not handle 64bit integers without loss of significant digits. Error in: ' . __METHOD__ . " on line " . __LINE__);
+        }
+    }
+
     /**
      * @param string|null $transactionCode
      * @return void
@@ -386,7 +399,7 @@ class Message implements \Iterator
 
     protected function readHeader()
     {
-        $headerPart = substr($this->binaryMessage, 0, (int)$this->getHeaderLength());
+        $headerPart = substr($this->binaryMessage, 0, $this->getHeaderLength());
         $this->headerMessageDecoded = $this->getHeaderMessageDecoded($headerPart);
     }
 
@@ -395,7 +408,7 @@ class Message implements \Iterator
         if (ConfigManager::getPgda('headerLength') == null) {
             throw new \UnexpectedValueException('Can not use a message with header length not set.');
         }
-        return ConfigManager::getPgda('headerLength');
+        return (int)ConfigManager::getPgda('headerLength');
     }
 
     private function getHeaderMessageDecoded(string $binaryHeader)
@@ -410,8 +423,86 @@ class Message implements \Iterator
         $messageHeader->attach(UField::set("Tipo Mess.", UField::string, '_msgID', 4));
         $messageHeader->attach(UField::set("Codice transazione", UField::string, '_codTransazione', 16));
         $messageHeader->attach(UField::set("Lunghezza Body", UField::int, '_bodyLength'));
+        return $this->read($binaryHeader, $messageHeader);
+    }
 
-        return $this->read($binaryHeader, $messageHeader);//continue here
+    private function read($messageBinary, $messageObject)
+    {
+        if (empty ($messageBinary)) {
+            throw new \UnexpectedValueException("Nothing to decode. Binary message response is null!");
+        }
+        $errorMessage[] = "\nUnpacking: ";
+        $stringDecodeTypes = "";
+        $arrayDecodeTypes = [];
+
+        $bit64Array = [];
+        $position = 0;
+        foreach ($messageObject as $fieldPosition => $field) {
+            $position += $field->typeLength;
+            $rvnp = $position > strlen($messageBinary) ? '_' : '';
+            switch ($field->invoke) {
+
+                case "NN":
+                    //there's a big int Type
+                    $errorMessage[] = "Processing " . $field->name . " (64bit) in index " . $field->returnVariableName;
+                    //unpack even if not useful
+                    $arrayDecodeTypes[] = "N2" . $rvnp . $field->returnVariavleName;
+
+                    //set presence of Big Int in Position $fieldPosition with their Var Name
+                    $bit64Array[$fieldPosition] = $rvnp . $field->returnVariableName;
+
+                break;
+                default:
+                    $errorMessage[] = "Processing " . $field->name . " in index " . $field->returnVariableName;
+                    //"A8myname/cstringa/"
+                    $arrayDecodeTypes[] = $field->invoke . $rvnp . $field->returnVariableName;
+                break;
+            }
+        }
+        $stringDecodeTypes = implode("/", $arrayDecodeTypes);
+        $forceWarning = false;
+        if (strlen($messageBinary) < $messageObject->getBytesNeeded()) {
+            $forceWarning = true;
+            $messageBinary = str_pad($messageBinary, $messageObject->getBytesNeeded());
+        }
+        $arrayResponse = unpack($stringDecodeTypes, $messageBinary);
+        if (!empty($bit64Array)) {
+            foreach ($bit64Array as $position => $returnVariableBase) {
+                $byte8Int = substr($messageBinary, $messageObject->getPositionField($position), 8);
+                $bigInt = $this->read64bitInteger($byte8Int);
+
+                //unset the fakes hiWord and loWord of unpack php function and insert in Array the new rebuilded value
+                unset($arrayResponse[$returnVariableBase . '1']);
+                unset($arrayResponse[$returnVariableBase . '2']);
+                $arrayResponse[$returnVariableBase] = $bigInt;
+
+            }
+        }
+        if (!is_array($arrayResponse)) {
+            throw new \UnexpectedValueException("Problem unpacking response!");
+        }
+
+        if ($forceWarning && (!isset($arrayResponse['_esitoMessaggio']) || $arrayResponse['_esitoMessaggio'] == 0)) {
+            throw new \UnexpectedValueException("Problem unpacking forced response!");
+        }
+        $this->errorMessage['_read'][] = array_merge($errorMessage, [print_r($arrayResponse, true)]);
+        return $arrayResponse;
+    }
+
+    private function getBytesNeeded()
+    {
+        return $this->positionEnds[count($this->positionEnds) - 1];
+    }
+
+    protected function readBody()
+    {
+        $bodyPart = substr($this->binaryMessage, $this->getHeaderLength());
+        $this->bodyMessageDecoded = $this->read($bodyPart, $this);
+    }
+
+    private function getCode()
+    {
+        return $this->bodyMessageDecoded['_esitoMessaggio'];
     }
 
 }

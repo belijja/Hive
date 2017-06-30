@@ -186,7 +186,7 @@ class Message400 extends Message
         }
     }
 
-    public function decodeResponse()//continue here
+    public function decodeResponse()
     {
         $this->resetStack();
         $this->attach(UField::set("Esito", UField::shortInt, '_esitoMessaggio'));
