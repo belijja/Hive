@@ -113,10 +113,13 @@ class Message implements \Iterator
         $this->setAamsGameType($aamsGameType);
         $this->buildMessage();
         $binaryMessage = $this->getHeader() . $this->getBody();
-        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix);
+        $recordMessage = $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix);
+        $this->setBinaryResponse($recordMessage);
+        $this->decodeResponse();
+        return $this->getCode();
     }
 
-    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, string $serverPathSuffix, int $cnt = 0)
+    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, string $serverPathSuffix, int $cnt = 0): string
     {
         $cnt++;
         try {
@@ -142,11 +145,9 @@ class Message implements \Iterator
                     }
                 break;
             }
-            return -42;
+            return '-42';
         }
-        $this->setBinaryResponse($recordMessage);
-        $this->decodeResponse();
-        return $this->getCode();
+        return $recordMessage;
     }
 
     /**
@@ -503,6 +504,42 @@ class Message implements \Iterator
     private function getCode()
     {
         return $this->bodyMessageDecoded['_esitoMessaggio'];
+    }
+
+    public function getDebug($asString = false, $htmlOutput = false)
+    {
+        if ($asString) {
+            $message = "";
+            if ($htmlOutput === true) {
+                $message .= "<pre>";
+            }
+            $tmp = [];
+            foreach ($this->errorMessage as $sections) {
+                foreach ($sections as $subSections) {
+                    if (!is_array($subSections)) {
+                        $tmp[] = $subSections;
+                    } else {
+                        $tmp[] = implode("\n", $subSections);
+                    }
+                }
+                $tmp[] = implode("\n", $tmp);
+            }
+            $message .= implode("\n", $tmp);
+            if ($htmlOutput === true) {
+                $message .= "</pre>";
+            }
+            return print_r($message, true);
+
+        }
+        return $this->errorMessage;
+    }
+
+    /**
+     * @return array
+     */
+    public function getBodyResponse(): array
+    {
+        return $this->bodyMessageDecoded;
     }
 
 }

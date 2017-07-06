@@ -81,10 +81,21 @@ class PGDAIntegration
                 $message->setAttribute('BON', 'B');
             }
             $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
+            if ($returnCode /*!= 0*/ == 0) {
+                error_log($message->getDebug(true));
+                return [
+                    "status" => $returnCode
+                ];
+            } else {
+                $response = $message->getBodyResponse();
+                return [
+                    "status"      => 1,
+                    "announce_id" => $response['_idSessConvalida']
+                ];
+            }
         } catch (\Exception $exception) {
             throw new \SoapFault('PGDA_ERROR', $exception->getMessage());
         }
-        return [];
     }
 
     /**
