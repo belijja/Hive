@@ -11,6 +11,7 @@ namespace BackOffice;
 
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
+use Helpers\LogHelpers\LogManager;
 
 class Bonus
 {
@@ -29,7 +30,7 @@ class Bonus
         if ($query->execute() && $query->rowCount() > 0) {
             $wageredCampaign = $query->fetch(\PDO::FETCH_ASSOC);
         } else {
-            error_log("Query failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+            LogManager::log('error', true, "Query failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             return $wageredCampaign;
         }
         return $wageredCampaign;//type 1 = fun campaign, type 2 = real campaign and type 3 = wagering campaign
@@ -50,7 +51,7 @@ class Bonus
         ) {
             $campaign = $query->fetch(\PDO::FETCH_ASSOC);
         } else {
-            error_log("Query failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+            LogManager::log('error', true, "Query failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             return $campaign['threshold_amount'];
         }
         return (int)$campaign['threshold_amount'];

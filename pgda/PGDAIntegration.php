@@ -13,6 +13,7 @@ use Configs\PgdaCodes;
 use Helpers\ConfigHelpers\ConfigManager;
 use Models\PgdaModels;
 use Pgda\Messages\Message400;
+use Helpers\LogHelpers\LogManager;
 
 class PGDAIntegration
 {
@@ -81,8 +82,8 @@ class PGDAIntegration
                 $message->setAttribute('BON', 'B');
             }
             $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
-            if ($returnCode /*!= 0*/ == 0) {
-                error_log($message->getDebug(true));
+            if ($returnCode != 0) {
+                LogManager::log('pgda', false, $message->getDebug(true));
                 return [
                     "status" => $returnCode
                 ];
@@ -132,7 +133,7 @@ class PGDAIntegration
     {
         $parsedDate = date_parse($date);
         if (!$parsedDate) {
-            error_log('PGDA: Invalid date! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($parsedDate, true));
+            LogManager::log('error', true, 'PGDA: Invalid date! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($parsedDate, true));
             exit;
         }
         return $parsedDate;

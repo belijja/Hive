@@ -19,6 +19,7 @@ abstract class AbstractPartner
     protected $serverManager;
     protected $db;
     protected $soapClient;
+    protected $log;
 
     /**
      * AbstractPartners constructor.

@@ -11,6 +11,7 @@ namespace Users;
 
 use BackOffice\Bonus;
 use Configs\GameProviderConfigs;
+use Helpers\LogHelpers\LogManager;
 
 class UserFactory
 {
@@ -31,7 +32,7 @@ class UserFactory
             }
         }
         if (is_null($user)) {
-            error_log('Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
+            LogManager::log('error', true, 'Factory user not found! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($user, true));
             throw new \SoapFault('-3', 'Factory user not found');
         }
         return $user;

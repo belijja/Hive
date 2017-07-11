@@ -12,6 +12,7 @@ namespace Users;
 use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\ConfigHelpers\Db;
 use BackOffice\Bonus;
+use Helpers\LogHelpers\LogManager;
 
 class User
 {
@@ -142,7 +143,7 @@ class User
                     $cashierToken = 'X';
                 }
             } else {
-                error_log('Missing session data! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($this->user, true));
+                LogManager::log('error', true, 'Missing session data! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($this->user, true));
             }
         }
         for ($i = 0; $i < $max; $i++) {
@@ -336,7 +337,7 @@ class User
         switch ($eventId) {
             case 1://funbonus win notification
                 if (!isset($details['amount'])) {
-                    error_log('Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    LogManager::log('error', true, 'Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     return;
                 }
                 if (isset($details['campaignId'])) {
@@ -348,7 +349,7 @@ class User
                         $result = $query->fetch(\PDO::FETCH_ASSOC);
                         $realCampaignId = $result['real_campaign_id'];
                     } else {
-                        error_log('Query failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                        LogManager::log('error', true, 'Query failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                         return;
                     }
                     $campaignMaxWin = $this->bonus->getCampaignMaxWin($realCampaignId);
@@ -361,7 +362,7 @@ class User
             case 2://wagering campaign start notification
                 $wageringCampaignDetails = $this->bonus->getWagerCampaignDetails();
                 if (empty($wageringCampaignDetails)) {
-                    error_log('Wagering campaign not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    LogManager::log('error', true, 'Wagering campaign not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     return;
                 } else {
                     $bonusAmount = $wageringCampaignDetails['bonus_amount'];
@@ -393,7 +394,7 @@ class User
                 }
             break;
             default:
-                error_log('Event ID not valid! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                LogManager::log('error', true, 'Event ID not valid! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                 return;
             break;
         }
@@ -410,7 +411,7 @@ class User
         if ($response) {
             return;
         } else {
-            error_log('CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
+            LogManager::log('error', true, 'CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
             return;
         }
     }
@@ -430,6 +431,6 @@ class User
         if (!($flags & 2)) {
             $sessionLog = $sessionLog . substr($dateTimeWithMicroseconds, 0, 10);
         }
-        error_log($dateTimeWithMicroseconds . ' Session ID ' . $this->externalSessionId . ' ' . $message . "\n", 3, $sessionLog);
+        LogManager::log('session', true, $dateTimeWithMicroseconds . ' Session ID ' . $this->externalSessionId . ' ' . $message . "\n");
     }
 }

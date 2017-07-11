@@ -14,6 +14,7 @@ use Helpers\ServerHelpers\ServerManager;
 use Configs\SKSCodes;
 use Configs\CurrencyCodes;
 use Helpers\SoapHelpers\SKSSoapClient;
+use Helpers\LogHelpers\LogManager;
 
 /**
  * Class SKSPartners
@@ -99,9 +100,9 @@ class SKSPartner extends AbstractPartner
             } else {
                 $params['username'] = $userDetails->username;
                 $params['isFirstLogin'] = $userDetails->isFirst ? 1 : 0;
-                $currencyId = CurrencyCodes::getCurrencyIds($params['currencyCode']);//making variable shorter for using in error_log function
+                $currencyId = CurrencyCodes::getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
                 if (CurrencyCodes::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
-                    error_log('PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId);
+                    LogManager::log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     throw new \SoapFault('-3', 'Currency code has changed.');
                 }
                 if ($params['username'] == $userDetails->username && $params['email'] == $userDetails->email && $params['firstName'] == $userDetails->firstname && $params['lastName'] == $userDetails->lastname && $params['city'] == $userDetails->city && $params['street'] == $userDetails->street && $params['state'] == $userDetails->state && $params['zip'] == $userDetails->zip && $params['dateOfBirth'] == $userDetails->dob && $params['phone'] == $userDetails->phone && $params['country'] == $userDetails->country && $params['externalUsername'] == $userDetails->extern_username && !$userDetails['isFirst']) {

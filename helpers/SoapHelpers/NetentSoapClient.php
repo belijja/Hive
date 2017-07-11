@@ -10,6 +10,7 @@ declare(strict_types = 1);
 namespace Helpers\SoapHelpers;
 
 use Helpers\ConfigHelpers\ConfigManager;
+use Helpers\LogHelpers\LogManager;
 
 class NetentSoapClient
 {
@@ -34,7 +35,7 @@ class NetentSoapClient
             ];
             $loginUserReturn = $soapClient->loginUserDetailed($userParams);
         } catch (\Exception $error) {
-            error_log("Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
+            LogManager::log('error', true, "Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }
         $returnFromNetent = get_object_vars($loginUserReturn);
@@ -59,7 +60,7 @@ class NetentSoapClient
             ];
             $soapClient->logoutUser($params);
         } catch (\Exception $error) {
-            error_log("Netent logout failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
+            LogManager::log('error', true, "Netent logout failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }*/
         return;

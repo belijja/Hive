@@ -15,6 +15,7 @@ use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
 use Users\UserFactory;
 use Pgda\PGDAIntegration;
+use Helpers\LogHelpers\LogManager;
 
 class NetentProvider
 {
@@ -89,11 +90,11 @@ class NetentProvider
         if ((bool)ConfigManager::getIT('isItalian') === true) {
             $aamsGameCode = !!($thirdPartyServiceUser['sessionData']['option'] & 1) ? $gameData['aams_game_id_mobile'] : $gameData['aams_game_id_desktop'];
             if (empty($aamsGameCode)) {
-                error_log('aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                LogManager::log('error', true, 'aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
                 throw new \SoapFault('0', 'Unspecified error.');
             }
             if (empty($gameData['aams_game_type'])) {
-                error_log('aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                LogManager::log('error', true, 'aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
                 throw new \SoapFault('0', 'Unspecified error.');
             } else {
                 $aamsGameType = $gameData['aams_game_type'];
@@ -120,7 +121,7 @@ class NetentProvider
             }
         } catch (\SoapFault $soapFault) {
             Db::getInstance(ConfigManager::getDb('database', true))->rollBack();
-            error_log("Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+            LogManager::log('error', true, "Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             throw new \SoapFault('0', 'Unspecified error.');
         }
         if (isset($amountInCents) && $amountInCents == 0 && (!isset($campaignId) || $campaignId == 0)) {
@@ -136,7 +137,7 @@ class NetentProvider
         if (isset($gameData['is_slot'])) {
             $isSlot = $gameData['is_slot'];
         } else {
-            error_log('is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+            LogManager::log('error', true, 'is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
             throw new \SoapFault('0', 'Unspecified error.');
         }
         //insert session, state 0
@@ -151,7 +152,7 @@ class NetentProvider
                         $user->sendNotification(2);
                     }
                 } else {
-                    error_log("Wagering weekdays not set! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    LogManager::log('error', true, "Wagering weekdays not set! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                 }
             } else {
                 $bonus = null;

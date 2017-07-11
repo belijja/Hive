@@ -15,6 +15,7 @@ use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 use Pgda\PGDAIntegration;
 use Helpers\ConfigHelpers\ConfigManager;
+use Helpers\LogHelpers\LogManager;
 
 class Message implements \Iterator
 {
@@ -128,7 +129,7 @@ class Message implements \Iterator
         } catch (\Exception $exception) {
             switch ($exception->getCode()) {
                 case -42:// header not found
-                    error_log("PGDA header not found: " . $exception->getMessage());
+                    LogManager::log('pgda', false, "PGDA header not found: " . $exception->getMessage());
                     if ($cnt <= 3) {
                         $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId(PgdaCodes::getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
                         $this->writeHeader();
@@ -138,7 +139,7 @@ class Message implements \Iterator
                     }
                 break;
                 default:// HTTP error
-                    error_log("PGDA exception, HTTP CODE: " . $exception->getCode());
+                    LogManager::log('pgda', false, "PGDA exception, HTTP CODE: " . $exception->getCode());
                     if ($cnt <= 3) {
                         sleep(1);
                         $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix, $cnt);
@@ -245,7 +246,7 @@ class Message implements \Iterator
                 throw new \LogicException ("Can not write header packet while aamsGioco is not defined Error in " . __METHOD__ . " on line: " . __LINE__);
             }
         }
-        error_log("AAMS_CONC: " . PgdaCodes::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaCodes::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
+        LogManager::log('pgda', false, "AAMS_CONC: " . PgdaCodes::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaCodes::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
         $messageHeader = new Message();
         $messageHeader->attach(PField::set("Num. vers. Protoc.", PField::byte, 2));
         $messageHeader->attach(PField::set("Cod. Forn. Servizi", PField::int, PgdaCodes::getPgdaAamsCodes('fsc')));
