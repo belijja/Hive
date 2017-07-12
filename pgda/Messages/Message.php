@@ -107,20 +107,30 @@ class Message implements \Iterator
         return $this->store;
     }
 
-    public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix)
+    /**
+     * @param string $transactionCode
+     * @param int $aamsGameCode
+     * @param int $aamsGameType
+     * @param string $serverPathSuffix
+     * @return int
+     */
+    public function send(string $transactionCode, int $aamsGameCode, int $aamsGameType, string $serverPathSuffix): int
     {
         $this->setTransactionCode($transactionCode);
         $this->setAamsGameCode($aamsGameCode);
         $this->setAamsGameType($aamsGameType);
         $this->buildMessage();
         $binaryMessage = $this->getHeader() . $this->getBody();
-        $recordMessage = $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix);
+        $recordMessage = $this->sendMessageRecursive($binaryMessage, $serverPathSuffix);
+        if ($recordMessage == -42) {
+            return -42;
+        }
         $this->setBinaryResponse($recordMessage);
         $this->decodeResponse();
         return $this->getCode();
     }
 
-    private function sendMessageRecursive(string $binaryMessage, string $oldEncodedBody, string $serverPathSuffix, int $cnt = 0): string
+    private function sendMessageRecursive(string $binaryMessage, string $serverPathSuffix, int $cnt = 0): string
     {
         $cnt++;
         try {
@@ -135,14 +145,14 @@ class Message implements \Iterator
                         $this->writeHeader();
                         $binaryMessage = $this->getHeader() . $this->getBody();
                         sleep(1);
-                        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix, $cnt);
+                        $this->sendMessageRecursive($binaryMessage, $serverPathSuffix, $cnt);
                     }
                 break;
                 default:// HTTP error
                     LogManager::log('pgda', false, "PGDA exception, HTTP CODE: " . $exception->getCode());
                     if ($cnt <= 3) {
                         sleep(1);
-                        $this->sendMessageRecursive($binaryMessage, $this->getBody(), $serverPathSuffix, $cnt);
+                        $this->sendMessageRecursive($binaryMessage, $serverPathSuffix, $cnt);
                     }
                 break;
             }
@@ -227,7 +237,10 @@ class Message implements \Iterator
         $this->headerMessageEncoded = $this->writeHeader();
     }
 
-    private function writeHeader()
+    /**
+     * @return string
+     */
+    private function writeHeader(): string
     {
         if (is_null($this->bodyMessageEncoded)) {
             throw new \LogicException("Can not write header packet while bodyMessage is not written. Error in " . __METHOD__ . " on line: " . __LINE__);
@@ -399,13 +412,19 @@ class Message implements \Iterator
         $this->positionEnds = [];
     }
 
-    protected function readHeader()
+    /**
+     * @return void
+     */
+    protected function readHeader(): void
     {
         $headerPart = substr($this->binaryMessage, 0, $this->getHeaderLength());
         $this->headerMessageDecoded = $this->getHeaderMessageDecoded($headerPart);
     }
 
-    private function getHeaderLength()
+    /**
+     * @return int
+     */
+    private function getHeaderLength(): int
     {
         if (ConfigManager::getPgda('headerLength') == null) {
             throw new \UnexpectedValueException('Can not use a message with header length not set.');
@@ -413,7 +432,11 @@ class Message implements \Iterator
         return (int)ConfigManager::getPgda('headerLength');
     }
 
-    private function getHeaderMessageDecoded(string $binaryHeader)
+    /**
+     * @param string $binaryHeader
+     * @return array
+     */
+    private function getHeaderMessageDecoded(string $binaryHeader): array
     {
         $messageHeader = new Message();
         $messageHeader->attach(UField::set("Num. vers. Protoc.", UField::byte, '_numProtocollo'));
@@ -428,7 +451,12 @@ class Message implements \Iterator
         return $this->read($binaryHeader, $messageHeader);
     }
 
-    private function read($messageBinary, $messageObject)
+    /**
+     * @param string $messageBinary
+     * @param Message $messageObject
+     * @return array
+     */
+    private function read(string $messageBinary, Message $messageObject): array
     {
         if (empty ($messageBinary)) {
             throw new \UnexpectedValueException("Nothing to decode. Binary message response is null!");
@@ -496,18 +524,29 @@ class Message implements \Iterator
         return $this->positionEnds[count($this->positionEnds) - 1];
     }
 
-    protected function readBody()
+    /**
+     * @return void
+     */
+    protected function readBody(): void
     {
         $bodyPart = substr($this->binaryMessage, $this->getHeaderLength());
         $this->bodyMessageDecoded = $this->read($bodyPart, $this);
     }
 
-    private function getCode()
+    /**
+     * @return int
+     */
+    private function getCode(): int
     {
         return $this->bodyMessageDecoded['_esitoMessaggio'];
     }
 
-    public function getDebug($asString = false, $htmlOutput = false)
+    /**
+     * @param bool $asString
+     * @param bool $htmlOutput
+     * @return string
+     */
+    public function getDebug(bool $asString = false, bool $htmlOutput = false)//continue here
     {
         if ($asString) {
             $message = "";

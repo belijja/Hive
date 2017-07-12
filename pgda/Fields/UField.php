@@ -12,7 +12,7 @@ namespace Pgda\Fields;
 class UField extends AbstractField
 {
 
-    protected function __construct($name, $type, $returnVariable, $length)
+    protected function __construct(string $name, string $type, string $returnVariable = null, int $length = null)
     {
 
         $class = new \ReflectionClass($this);
@@ -35,8 +35,8 @@ class UField extends AbstractField
 
     }
 
-    public static function set($name, $type, $returnVariable, $length = null)
+    public static function set(string $name, string $type, string $returnVariable = null, int $length = null): UField
     {
-        return new uField($name, $type, $returnVariable, $length);
+        return new UField($name, $type, $returnVariable, $length);
     }
 }

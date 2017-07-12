@@ -12,7 +12,7 @@ namespace Pgda\Fields;
 abstract class AbstractField
 {
     public $typeLength;
-    public $name;//these protected variables are added because there is no extending of stdClass due to dynamically adding variables
+    public $name;//these variables are added because there is no extending of stdClass due to dynamically adding variables
     public $value;
     public $invoke;
     public $returnVariableName;
@@ -30,7 +30,11 @@ abstract class AbstractField
     private static $N = 4;
     private static $NN = 8;
 
-    protected function setTypeLength($type, $length)
+    /**
+     * @param string $type
+     * @param int $length
+     */
+    protected function setTypeLength(string $type, int $length = null): void
     {
         $this->typeLength = self::$$type;
         if (empty($this->typeLength)) {

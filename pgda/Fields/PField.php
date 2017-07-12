@@ -11,7 +11,7 @@ namespace Pgda\Fields;
 
 class PField extends AbstractField
 {
-    protected function __construct($name, $type, $value, $length, $returnVariable = null)
+    protected function __construct(string $name, string $type, $value = null, int $length = null, string $returnVariable = null)
     {
         $class = new \ReflectionClass($this);
         $constants = $class->getConstants();
@@ -32,7 +32,7 @@ class PField extends AbstractField
         $this->returnVariableName = $returnVariable;
     }
 
-    public static function set($name, $type, $value = null, $length = null, $returnVariable = null)
+    public static function set(string $name, string $type, $value = null, int $length = null, string $returnVariable = null): PField//value must have different values
     {
         return new PField($name, $type, $value, $length, $returnVariable);
     }
