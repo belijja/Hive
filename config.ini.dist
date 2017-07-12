@@ -37,8 +37,8 @@ isItalian =
 [BONUS]
 funBonusNotificationLink =
 
-[SESSION]
-sessionLogDir =
+[LOG]
+logDir =
 
 [PGDA]
 sessionDuration =

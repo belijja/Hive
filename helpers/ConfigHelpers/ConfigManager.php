@@ -23,7 +23,7 @@ class ConfigManager
     private static $netent;
     private static $it;
     private static $bonus;
-    private static $session;
+    private static $log;
     private static $pgda;
 
     /**
@@ -43,7 +43,7 @@ class ConfigManager
         self::$netent = $config['NETENT'];
         self::$it = $config['IT'];
         self::$bonus = $config['BONUS'];
-        self::$session = $config['SESSION'];
+        self::$log = $config['LOG'];
         self::$pgda = $config['PGDA'];
 
     }
@@ -91,9 +91,9 @@ class ConfigManager
      * @param string $key
      * @return string
      */
-    public static function getSession(string $key): string
+    public static function getLog(string $key): string
     {
-        return self::$session[$key];
+        return self::$log[$key];
     }
 
     /**

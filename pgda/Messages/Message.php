@@ -487,7 +487,7 @@ class Message implements \Iterator
         if ($forceWarning && (!isset($arrayResponse['_esitoMessaggio']) || $arrayResponse['_esitoMessaggio'] == 0)) {
             throw new \UnexpectedValueException("Problem unpacking forced response!");
         }
-        $this->errorMessage['_read'][] = array_merge($errorMessage, [print_r($arrayResponse, true)]);
+        $this->errorMessage['read'][] = array_merge($errorMessage, [print_r($arrayResponse, true)]);
         return $arrayResponse;
     }
 
@@ -523,7 +523,7 @@ class Message implements \Iterator
                         $tmp[] = implode("\n", $subSections);
                     }
                 }
-                $tmp[] = implode("\n", $tmp);
+                //$tmp[] = implode("\n", $tmp);
             }
             $message .= implode("\n", $tmp);
             if ($htmlOutput === true) {

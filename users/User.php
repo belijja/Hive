@@ -418,19 +418,10 @@ class User
 
     /**
      * @param string $message
-     * @param int $flags
      * @return void
      */
-    public function logSession(string $message, int $flags = 0): void
+    public function logSession(string $message): void
     {
-        $timeOfTheDay = gettimeofday();
-        $microsecondsThisDay = (int)($timeOfTheDay['usec'] / 100);//getting number of microseconds in that day
-        $dateTimeWithMicroseconds = strftime("%F %T." . str_pad((string)$microsecondsThisDay, 4, '0', STR_PAD_LEFT), $timeOfTheDay['sec']);
-        $sessionLog = ConfigManager::getSession('sessionLogDir');
-        $r = substr($dateTimeWithMicroseconds, 0, 10);
-        if (!($flags & 2)) {
-            $sessionLog = $sessionLog . substr($dateTimeWithMicroseconds, 0, 10);
-        }
-        LogManager::log('session', true, $dateTimeWithMicroseconds . ' Session ID ' . $this->externalSessionId . ' ' . $message . "\n");
+        LogManager::log('session', true, 'Session ID ' . $this->externalSessionId . ' ' . $message . "\n");
     }
 }
