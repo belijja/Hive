@@ -17,7 +17,12 @@ use Helpers\ConfigHelpers\ConfigManager;
 
 class LogManager
 {
-    public static function log($logLevel, $isLineFormatter, $errorText)
+    /**
+     * @param string $logLevel
+     * @param bool $isLineFormatter
+     * @param string $errorText
+     */
+    public function log(string $logLevel, bool $isLineFormatter, string $errorText): void
     {
         $reflection = new \ReflectionClass('Monolog\Logger');
         $constants = $reflection->getConstants();

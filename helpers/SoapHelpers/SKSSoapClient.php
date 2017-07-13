@@ -15,7 +15,14 @@ use Helpers\LogHelpers\LogManager;
 class SKSSoapClient implements ISoapClient
 {
 
-    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
+    /**
+     * @param int $userId
+     * @param int $skinId
+     * @param \SoapClient|null $soapClient
+     * @param LogManager $logger
+     * @return \stdClass
+     */
+    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null, LogManager $logger): /*array*/
     \stdClass
     {
         $response = new \stdClass();
@@ -67,7 +74,7 @@ class SKSSoapClient implements ISoapClient
             $response->GetUserInfoResult->_UserID = (int)$response->GetUserInfoResult->_UserInfo->UserID;
             $response->GetUserInfoResult->_FatherID = (int)$response->GetUserInfoResult->_UserInfo->FatherID;
         } else {
-            LogManager::log('error', true, 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($params, true));
+            $logger->log('error', true, 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($params, true));
         }
         return $response;
     }

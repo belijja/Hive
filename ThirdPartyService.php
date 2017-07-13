@@ -25,10 +25,12 @@ use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
 use Helpers\SoapHelpers\NetentSoapClient;
+use Helpers\SoapHelpers\SKSSoapClient;
+use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 //partners
 use Partners\SKSPartner;
 use Partners\ThirdPartyIntegrationPartner;
-use Partners\AbstractPartner;
+use Partners\IPartner;
 //users
 use Users\ServiceUser;
 //backOffice
@@ -40,6 +42,12 @@ use Providers\NetentProvider;
 use Configs\PartnerConfigs;
 //pgda
 use Pgda\PGDAIntegration;
+//service container
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+
+$container = new ContainerBuilder();
+$container->register('Logger', 'Helpers\LogHelpers\LogManager')->setShared(true);
+$container->register('Db', 'Helpers\ConfigHelpers\Db')->setShared(true);
 
 /**
  * Class ThirdPartyService
@@ -59,14 +67,14 @@ class ThirdPartyService
      * ThirdPartyService constructor.
      * @param SoapManager $soapManager
      * @param ParamManager $paramManager
-     * @param AbstractPartner $SKS
-     * @param AbstractPartner $thirdPartyIntegration
+     * @param IPartner $SKS
+     * @param IPartner $thirdPartyIntegration
      * @param ServiceUser $serviceUsers
      * @param SessionManager $sessionManager
      * @param Core $core
      * @param NetentProvider $NetentProvider
      */
-    public function __construct(SoapManager $soapManager, ParamManager $paramManager, AbstractPartner $SKS, AbstractPartner $thirdPartyIntegration, ServiceUser $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
+    public function __construct(SoapManager $soapManager, ParamManager $paramManager, IPartner $SKS, IPartner $thirdPartyIntegration, ServiceUser $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
     {
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
@@ -208,7 +216,10 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(), new ThirdPartyIntegrationPartner(), new ServiceUser(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
+    $container = new ContainerBuilder();
+    $container->register('Logger', 'Helpers\LogHelpers\LogManager')->setShared(true);
+    $container->register('Db', 'Helpers\ConfigHelpers\Db')->setShared(true);
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(new SKSSoapClient(), $container), new ThirdPartyIntegrationPartner(new ThirdPartyIntegrationSoapClient(), $container), new ServiceUser($container), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check

@@ -10,11 +10,19 @@ declare(strict_types = 1);
 namespace Helpers\SoapHelpers;
 
 use Configs\SkinConfigs;
+use Helpers\LogHelpers\LogManager;
 
 class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
 
-    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null): /*array*/
+    /**
+     * @param int $userId
+     * @param int $pokerSkinId
+     * @param \SoapClient|null $soapClient
+     * @param LogManager $logger
+     * @return \stdClass
+     */
+    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, LogManager $logger): /*array*/
     \stdClass
     {
         $response = new \stdClass();
@@ -77,7 +85,9 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
                 $soapClient = new SoapProxy(SkinConfigs::getSkinConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
             }
         }
-        return $soapClient->UserGetInfo($params);*/
+        $response = $soapClient->UserGetInfo($params);
+        $logger->log('error', true, 'ThirdPartySoapClient Response ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($response, true));
+        return $response;*/
     }
 
 }

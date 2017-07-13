@@ -10,22 +10,24 @@ declare(strict_types = 1);
 namespace Partners;
 
 use Configs\SkinConfigs;
-use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Class ThirdPartyIntegrationPartner
  * @package Partners
  */
-class ThirdPartyIntegrationPartner extends AbstractPartner
+class ThirdPartyIntegrationPartner implements IPartner
 {
+    private $soapClient;
+    private $db;
+    private $logger;
 
-    /**
-     * ThirdPartyIntegrationPartner constructor.
-     */
-    public function __construct()
+    public function __construct(ThirdPartyIntegrationSoapClient $soapClient, ContainerBuilder $container)
     {
-        parent::__construct(new ServerManager(), new ThirdPartyIntegrationSoapClient());
+        $this->soapClient = $soapClient;
+        $this->db = $container->get('Db');
+        $this->logger = $container->get('Logger');
     }
 
     /**
@@ -38,7 +40,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
      */
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
-        $query = $this->db->prepare("SELECT poker_skinid 
+        $query = $this->db->getDb(true)->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
                                              WHERE provider_id = :providerId 
                                              AND provider_skinid = :providerSkinId");
@@ -69,7 +71,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
         $isFirstLogin = 1;
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
-            $query = $this->db->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
+            $query = $this->db->getDb(true)->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
@@ -92,7 +94,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
                 ];
             }
         } else {
-            $query = $this->db->prepare("SELECT c.user_id, 
+            $query = $this->db->getDb(true)->prepare("SELECT c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst,
                                                  teud.authority_id as authorityId
                                                  FROM casino_ids c 
@@ -119,7 +121,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
             ];
         }
         if ($query->rowCount() == 0 || $needUpdate) {
-            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient);
+            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient, $this->logger);
             /*if (is_soap_fault($legacyUserInfo) || $legacyUserInfo->UserGetInfoResult->resultCode != 1) {
                 throw new \SoapFault('-3', 'Error connecting to third party user endpoint.');
             }*/
@@ -129,7 +131,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
             $params['userId'] = $userId;
             $params['skinId'] = SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
-                $query = $this->db->prepare("SELECT * 
+                $query = $this->db->getDb(true)->prepare("SELECT * 
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
@@ -138,14 +140,14 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
-                    $query = $this->db->prepare("INSERT INTO affiliates (name) 
+                    $query = $this->db->getDb(true)->prepare("INSERT INTO affiliates (name) 
                                                          VALUES (:agentName)");
                     if ($query->execute([
                         ':agentName' => $user->agentName
                     ])
                     ) {
                         $affiliateId = $this->db->lastInsertId();
-                        $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                        $query = $this->db->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                              VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
                             ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
@@ -158,7 +160,7 @@ class ThirdPartyIntegrationPartner extends AbstractPartner
             }
             if (!$needUpdate) {
                 if (!empty($user->authorityId) && is_null($result['authorityId'])) {
-                    $query = $this->db->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
+                    $query = $this->db->getDb(true)->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
                     if ($query->execute([
                         ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
                         ':userId'      => $userId,

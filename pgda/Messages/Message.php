@@ -542,36 +542,23 @@ class Message implements \Iterator
     }
 
     /**
-     * @param bool $asString
-     * @param bool $htmlOutput
      * @return string
      */
-    public function getDebug(bool $asString = false, bool $htmlOutput = false)//continue here
+    public function getDebugAsHtml(): string
     {
-        if ($asString) {
-            $message = "";
-            if ($htmlOutput === true) {
-                $message .= "<pre>";
-            }
-            $tmp = [];
-            foreach ($this->errorMessage as $sections) {
-                foreach ($sections as $subSections) {
-                    if (!is_array($subSections)) {
-                        $tmp[] = $subSections;
-                    } else {
-                        $tmp[] = implode("\n", $subSections);
-                    }
+        $message = "";
+        $tmp = [];
+        foreach ($this->errorMessage as $sections) {
+            foreach ($sections as $subSections) {
+                if (!is_array($subSections)) {
+                    $tmp[] = $subSections;
+                } else {
+                    $tmp[] = implode("\n", $subSections);
                 }
-                //$tmp[] = implode("\n", $tmp);
             }
-            $message .= implode("\n", $tmp);
-            if ($htmlOutput === true) {
-                $message .= "</pre>";
-            }
-            return print_r($message, true);
-
         }
-        return $this->errorMessage;
+        $message .= implode("\n", $tmp);
+        return print_r($message, true);
     }
 
     /**

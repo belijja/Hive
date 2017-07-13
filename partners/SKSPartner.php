@@ -10,21 +10,26 @@ declare(strict_types = 1);
 namespace Partners;
 
 use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\ServerHelpers\ServerManager;
 use Configs\SKSCodes;
 use Configs\CurrencyCodes;
 use Helpers\SoapHelpers\SKSSoapClient;
-use Helpers\LogHelpers\LogManager;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Class SKSPartners
  * @package Partners
  */
-class SKSPartner extends AbstractPartner
+class SKSPartner implements IPartner
 {
-    public function __construct()
+    private $soapClient;
+    private $db;
+    private $logger;
+
+    public function __construct(SKSSoapClient $soapClient, ContainerBuilder $container)
     {
-        parent::__construct(new ServerManager(), new SKSSoapClient());
+        $this->soapClient = $soapClient;
+        $this->db = $container->get('Db');
+        $this->logger = $container->get('Logger');
     }
 
     /**
@@ -38,7 +43,7 @@ class SKSPartner extends AbstractPartner
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
         $userDetails = null;//initializing variable for fetching user from db
-        $query = $this->db->prepare("SELECT c.extern_username, 
+        $query = $this->db->getDb(true)->prepare("SELECT c.extern_username, 
                                              datediff(now(), ud.updatetime) AS updatediff, 
                                              (ud.logintime <= ud.acttime) AS isFirst, u.* 
                                              FROM users u 
@@ -59,7 +64,7 @@ class SKSPartner extends AbstractPartner
             $userDetails = $query->fetch(\PDO::FETCH_OBJ);
         }
         if ($query->rowCount() == 0 || $userDetails->updatediff > 14 || $userDetails->isFirst) {
-            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $soapClient);
+            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $soapClient, $this->logger);
             /*if (is_soap_fault($SKSUserInfo) || $SKSUserInfo->GetUserInfoResult->_UserID != $userId) {
                 throw new \SoapFault('-3', 'Error connecting to SKS endpoint.');
             }*///delete comments on prod
@@ -102,7 +107,7 @@ class SKSPartner extends AbstractPartner
                 $params['isFirstLogin'] = $userDetails->isFirst ? 1 : 0;
                 $currencyId = CurrencyCodes::getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
                 if (CurrencyCodes::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
-                    LogManager::log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    $this->logger->log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     throw new \SoapFault('-3', 'Currency code has changed.');
                 }
                 if ($params['username'] == $userDetails->username && $params['email'] == $userDetails->email && $params['firstName'] == $userDetails->firstname && $params['lastName'] == $userDetails->lastname && $params['city'] == $userDetails->city && $params['street'] == $userDetails->street && $params['state'] == $userDetails->state && $params['zip'] == $userDetails->zip && $params['dateOfBirth'] == $userDetails->dob && $params['phone'] == $userDetails->phone && $params['country'] == $userDetails->country && $params['externalUsername'] == $userDetails->extern_username && !$userDetails['isFirst']) {
@@ -123,7 +128,7 @@ class SKSPartner extends AbstractPartner
      */
     private function checkAndAddAffiliate(int $skinId, int $fatherId, \SoapClient $soapClient = null): void
     {
-        $query = $this->db->prepare("SELECT poker_affilid 
+        $query = $this->db->getDb(true)->prepare("SELECT poker_affilid 
                                              FROM provider_affil_mapping 
                                              WHERE provider_affilid = :fatherId 
                                              AND provider_id = :SKSProviderId");
@@ -138,7 +143,7 @@ class SKSPartner extends AbstractPartner
             }
             $commit = false;
             $this->db->beginTransaction();
-            $query = $this->db->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
+            $query = $this->db->getDb(true)->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
                                                  VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
             $user = $SKSUserInfo->GetUserInfoResult->_UserInfo;//making variable name shorter
             if ($query->execute([
@@ -152,7 +157,7 @@ class SKSPartner extends AbstractPartner
                 ]) && $query->rowCount() > 0
             ) {
                 $pokerAffiliateId = $this->db->lastInsertId();
-                $query = $this->db->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                $query = $this->db->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
                     ':providerId'          => ConfigManager::getSKS('localPartnerId'),

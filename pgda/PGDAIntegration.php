@@ -83,7 +83,7 @@ class PGDAIntegration
             }
             $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
             if ($returnCode != 0) {
-                LogManager::log('pgda', false, $message->getDebug(true));
+                LogManager::log('pgda', false, $message->getDebugAsHtml());
                 return [
                     "status" => $returnCode
                 ];

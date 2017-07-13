@@ -10,7 +10,8 @@ declare(strict_types = 1);
 namespace Users;
 
 use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\ConfigHelpers\Db;
+use Services\Container;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Class ServiceUser
@@ -18,6 +19,13 @@ use Helpers\ConfigHelpers\Db;
  */
 class ServiceUser
 {
+    private $db;
+
+    public function __construct(ContainerBuilder $container)
+    {
+        $this->db = $container->get('db')->getDb(true);
+    }
+
     /**
      * @param array $params
      * @return array
@@ -26,7 +34,7 @@ class ServiceUser
     public function getUserData(array $params): array
     {
         list($providerId, $skinId, $userId) = $params;
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
+        $query = $this->db->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
                                                           GREATEST(f.level, f.retained_level) AS level, 
                                                           f.amount AS fpp_amount, 
                                                           r.amount AS r_amount, 
@@ -65,7 +73,7 @@ class ServiceUser
     public function getPokerSkinId(int $providerId, int $skinId): array
     {
         $returnData = [];
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT poker_skinid 
+        $query = $this->db->prepare("SELECT poker_skinid 
                                                           FROM provider_skin_mapping 
                                                           WHERE provider_id = :providerId 
                                                           AND provider_skinid = :skinId");

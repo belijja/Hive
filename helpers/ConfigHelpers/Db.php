@@ -15,24 +15,24 @@ namespace Helpers\ConfigHelpers;
  */
 class Db
 {
-    private static $dbTypes = [];
-    private $pdo;
+    public $pdo;
+    public $x = 0;
 
     /**
-     * Db constructor.
-     * @param $db
+     * @param bool $isFirstDbFromConfigFile
+     * @return \PDO
      */
-    private function __construct($db)
+    public function getDb(bool $isFirstDbFromConfigFile)
     {
-        switch ($db) {
-            case ConfigManager::getDb('database', true):
+        switch ($isFirstDbFromConfigFile) {
+            case true:
                 try {
                     $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDb('host', true) . ";dbname=" . ConfigManager::getDb('database', true) . ";charset=utf8", ConfigManager::getDb('user', true), ConfigManager::getDb('pass', true));
                 } catch (\PDOException $ex) {
                     echo $ex->getMessage();
                 }
             break;
-            case ConfigManager::getDb('database', false):
+            case false:
                 try {
                     $this->pdo = new \PDO("mysql:host=" . ConfigManager::getDb('host', false) . ";dbname=" . ConfigManager::getDb('database', false) . ";charset=utf8", ConfigManager::getDb('user', false), ConfigManager::getDb('pass', false));
                 } catch (\PDOException $ex) {
@@ -40,27 +40,8 @@ class Db
                 }
             break;
         }
-        self::$dbTypes[$db] = $this->pdo;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    private function __clone()
-    {
-        throw new \SoapFault('CODE_ERROR', 'You can not clone ' . __CLASS__ . ' class.');
-    }
-
-    /**
-     * @param $db
-     * @return \PDO
-     */
-    public static function getInstance($db): \PDO
-    {
-        if (!array_key_exists($db, self::$dbTypes)) {
-            self::$dbTypes[$db] = new self($db);
-        }
-        return self::$dbTypes[$db]->pdo;
-
+        error_log("Number " . $this->x);
+        $this->x++;
+        return $this->pdo;
     }
 }
