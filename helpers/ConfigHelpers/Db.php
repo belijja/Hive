@@ -22,7 +22,7 @@ class Db
      * @param bool $isFirstDbFromConfigFile
      * @return \PDO
      */
-    public function getDb(bool $isFirstDbFromConfigFile)
+    public function getDb(bool $isFirstDbFromConfigFile): \PDO
     {
         switch ($isFirstDbFromConfigFile) {
             case true:

@@ -9,11 +9,24 @@ declare(strict_types = 1);
 
 namespace BackOffice;
 
-class Core extends AbstractBackOffice
+use Helpers\ConfigHelpers\Db;
+
+class Core
 {
+    private $db;
+
+    /**
+     * Core constructor.
+     * @param Db $db
+     */
+    public function __construct(Db $db)
+    {
+        $this->db = $db;
+    }
+
     public function getGameShortData(int $gameId): array
     {
-        $query = $this->db->prepare("
+        $query = $this->db->getDb(false)->prepare("
                 SELECT 
 				pro.provider_id,
 				game.aams_game_id_desktop,

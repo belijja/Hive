@@ -12,8 +12,10 @@ namespace Partners;
 use Helpers\ConfigHelpers\ConfigManager;
 use Configs\SKSCodes;
 use Configs\CurrencyCodes;
+use Helpers\LogHelpers\LogManager;
+use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\SKSSoapClient;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Helpers\ConfigHelpers\Db;
 
 /**
  * Class SKSPartners
@@ -24,12 +26,21 @@ class SKSPartner implements IPartner
     private $soapClient;
     private $db;
     private $logger;
+    private $serverManager;
 
-    public function __construct(SKSSoapClient $soapClient, ContainerBuilder $container)
+    /**
+     * SKSPartner constructor.
+     * @param SKSSoapClient $soapClient
+     * @param Db $db
+     * @param LogManager $logger
+     * @param ServerManager $serverManager
+     */
+    public function __construct(SKSSoapClient $soapClient, Db $db, LogManager $logger, ServerManager $serverManager)
     {
         $this->soapClient = $soapClient;
-        $this->db = $container->get('Db');
-        $this->logger = $container->get('Logger');
+        $this->db = $db;
+        $this->logger = $logger;
+        $this->serverManager = $serverManager;
     }
 
     /**
@@ -64,7 +75,7 @@ class SKSPartner implements IPartner
             $userDetails = $query->fetch(\PDO::FETCH_OBJ);
         }
         if ($query->rowCount() == 0 || $userDetails->updatediff > 14 || $userDetails->isFirst) {
-            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $soapClient, $this->logger);
+            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $this->logger, $soapClient);
             /*if (is_soap_fault($SKSUserInfo) || $SKSUserInfo->GetUserInfoResult->_UserID != $userId) {
                 throw new \SoapFault('-3', 'Error connecting to SKS endpoint.');
             }*///delete comments on prod
@@ -137,7 +148,7 @@ class SKSPartner implements IPartner
                 ':SKSProviderId' => ConfigManager::getSKS('localPartnerId')
             ]) || $query->rowCount() == 0
         ) {
-            $SKSUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $soapClient);
+            $SKSUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $this->logger, $soapClient);
             if (is_soap_fault($SKSUserInfo) || $SKSUserInfo->GetUserInfoResult->_UserID != $fatherId || $SKSUserInfo->GetUserInfoResult->_UserInfo->UserType != 20) {
                 return;
             }

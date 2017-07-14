@@ -14,15 +14,14 @@ use Helpers\LogHelpers\LogManager;
 
 class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
-
     /**
      * @param int $userId
      * @param int $pokerSkinId
-     * @param \SoapClient|null $soapClient
      * @param LogManager $logger
+     * @param \SoapClient|null $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null, LogManager $logger): /*array*/
+    public function getUserInfo(int $userId, int $pokerSkinId, LogManager $logger, \SoapClient $soapClient = null): /*array*/
     \stdClass
     {
         $response = new \stdClass();

@@ -18,11 +18,11 @@ class SKSSoapClient implements ISoapClient
     /**
      * @param int $userId
      * @param int $skinId
-     * @param \SoapClient|null $soapClient
      * @param LogManager $logger
+     * @param \SoapClient|null $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null, LogManager $logger): /*array*/
+    public function getUserInfo(int $userId, int $skinId, LogManager $logger, \SoapClient $soapClient = null): /*array*/
     \stdClass
     {
         $response = new \stdClass();

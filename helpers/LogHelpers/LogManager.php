@@ -21,8 +21,9 @@ class LogManager
      * @param string $logLevel
      * @param bool $isLineFormatter
      * @param string $errorText
+     * @return Logger
      */
-    public function log(string $logLevel, bool $isLineFormatter, string $errorText): void
+    public function log(string $logLevel, bool $isLineFormatter, string $errorText): Logger
     {
         $reflection = new \ReflectionClass('Monolog\Logger');
         $constants = $reflection->getConstants();
@@ -31,5 +32,6 @@ class LogManager
         $handler->setFormatter($isLineFormatter ? new LineFormatter(null, null, false, true) : new HtmlFormatter());
         $log->pushHandler($handler);
         $log->$logLevel($errorText);
+        return $log;
     }
 }

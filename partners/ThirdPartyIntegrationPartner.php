@@ -10,8 +10,10 @@ declare(strict_types = 1);
 namespace Partners;
 
 use Configs\SkinConfigs;
+use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Helpers\LogHelpers\LogManager;
+use Helpers\ConfigHelpers\Db;
 
 /**
  * Class ThirdPartyIntegrationPartner
@@ -22,12 +24,14 @@ class ThirdPartyIntegrationPartner implements IPartner
     private $soapClient;
     private $db;
     private $logger;
+    private $serverManager;
 
-    public function __construct(ThirdPartyIntegrationSoapClient $soapClient, ContainerBuilder $container)
+    public function __construct(ThirdPartyIntegrationSoapClient $soapClient, Db $db, LogManager $logger, ServerManager $serverManager)
     {
         $this->soapClient = $soapClient;
-        $this->db = $container->get('Db');
-        $this->logger = $container->get('Logger');
+        $this->db = $db;
+        $this->logger = $logger;
+        $this->serverManager = $serverManager;
     }
 
     /**
@@ -121,7 +125,7 @@ class ThirdPartyIntegrationPartner implements IPartner
             ];
         }
         if ($query->rowCount() == 0 || $needUpdate) {
-            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient, $this->logger);
+            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $this->logger, $soapClient);
             /*if (is_soap_fault($legacyUserInfo) || $legacyUserInfo->UserGetInfoResult->resultCode != 1) {
                 throw new \SoapFault('-3', 'Error connecting to third party user endpoint.');
             }*/

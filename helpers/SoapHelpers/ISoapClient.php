@@ -16,11 +16,11 @@ interface ISoapClient
     /**
      * @param int $userId
      * @param int $skinId
-     * @param \SoapClient $soapClient
      * @param LogManager $logger
+     * @param \SoapClient $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient, LogManager $logger): /*array*/
+    public function getUserInfo(int $userId, int $skinId, LogManager $logger, \SoapClient $soapClient): /*array*/
     \stdClass;
 
 }

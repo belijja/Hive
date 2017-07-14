@@ -25,11 +25,7 @@ use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
 use Helpers\SoapHelpers\NetentSoapClient;
-use Helpers\SoapHelpers\SKSSoapClient;
-use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 //partners
-use Partners\SKSPartner;
-use Partners\ThirdPartyIntegrationPartner;
 use Partners\IPartner;
 //users
 use Users\ServiceUser;
@@ -43,11 +39,7 @@ use Configs\PartnerConfigs;
 //pgda
 use Pgda\PGDAIntegration;
 //service container
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-
-$container = new ContainerBuilder();
-$container->register('Logger', 'Helpers\LogHelpers\LogManager')->setShared(true);
-$container->register('Db', 'Helpers\ConfigHelpers\Db')->setShared(true);
+use Services\Container;
 
 /**
  * Class ThirdPartyService
@@ -216,10 +208,9 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $container = new ContainerBuilder();
-    $container->register('Logger', 'Helpers\LogHelpers\LogManager')->setShared(true);
-    $container->register('Db', 'Helpers\ConfigHelpers\Db')->setShared(true);
-    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(new SKSSoapClient(), $container), new ThirdPartyIntegrationPartner(new ThirdPartyIntegrationSoapClient(), $container), new ServiceUser($container), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
+    $serviceContainer = new Container();
+    $container = $serviceContainer->getService();
+    $thirdPartyService = new ThirdPartyService($container->get('SoapManager'), $container->get('ParamManager'), $container->get('SKSPartner'), $container->get('ThirdPartyIntegrationPartner'), $container->get('ServiceUser'), $container->get('SessionManager'), $container->get('Core'), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
     if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check
