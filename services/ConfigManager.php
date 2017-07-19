@@ -7,7 +7,7 @@
  */
 declare(strict_types = 1);
 
-namespace Helpers\ConfigHelpers;
+namespace Services;
 
 /**
  * Class ConfigManager
@@ -15,36 +15,37 @@ namespace Helpers\ConfigHelpers;
  */
 class ConfigManager
 {
-    private static $firstDb;
-    private static $secondDb;
-    private static $wsdl;
-    private static $SKS;
-    private static $server;
-    private static $netent;
-    private static $it;
-    private static $bonus;
-    private static $log;
-    private static $pgda;
+    private $firstDb;
+    private $secondDb;
+    private $wsdl;
+    private $SKS;
+    private $server;
+    private $netent;
+    private $it;
+    private $bonus;
+    private $log;
+    private $pgda;
 
     /**
+     * ConfigManager constructor.
      * @throws \SoapFault
      */
-    public static function parseConfigFile()
+    public function __construct()
     {
         if (!$config = parse_ini_file('config.ini', true)) {
             $error = error_get_last();
             throw new \SoapFault('CONFIG_ERROR', "Error occurred while parsing configuration file: " . $error['message'] . " in class " . __CLASS__ . " and method " . __METHOD__ . " and line " . __LINE__);
         }
-        self::$firstDb = $config['DATABASE 1'];
-        self::$secondDb = $config['DATABASE 2'];
-        self::$wsdl = $config['WSDL'];
-        self::$SKS = $config['SKS'];
-        self::$server = $config['SERVER'];
-        self::$netent = $config['NETENT'];
-        self::$it = $config['IT'];
-        self::$bonus = $config['BONUS'];
-        self::$log = $config['LOG'];
-        self::$pgda = $config['PGDA'];
+        $this->firstDb = $config['DATABASE 1'];
+        $this->secondDb = $config['DATABASE 2'];
+        $this->wsdl = $config['WSDL'];
+        $this->SKS = $config['SKS'];
+        $this->server = $config['SERVER'];
+        $this->netent = $config['NETENT'];
+        $this->it = $config['IT'];
+        $this->bonus = $config['BONUS'];
+        $this->log = $config['LOG'];
+        $this->pgda = $config['PGDA'];
 
     }
 
@@ -82,72 +83,72 @@ class ConfigManager
      * @param string $key
      * @return string
      */
-    public static function getPgda(string $key): string
+    public function getPgda(string $key): string
     {
-        return self::$pgda[$key];
+        return $this->pgda[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getLog(string $key): string
+    public function getLog(string $key): string
     {
-        return self::$log[$key];
+        return $this->log[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getBonus(string $key): string
+    public function getBonus(string $key): string
     {
-        return self::$bonus[$key];
+        return $this->bonus[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getIT(string $key): string
+    public function getIT(string $key): string
     {
-        return self::$it[$key];
+        return $this->it[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getNetent(string $key): string
+    public function getNetent(string $key): string
     {
-        return self::$netent[$key];
+        return $this->netent[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getServer(string $key): string
+    public function getServer(string $key): string
     {
-        return self::$server[$key];
+        return $this->server[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getSKS(string $key): string
+    public function getSKS(string $key): string
     {
-        return self::$SKS[$key];
+        return $this->SKS[$key];
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getWsdl(string $key): string
+    public function getWsdl(string $key): string
     {
-        return self::$wsdl[$key];
+        return $this->wsdl[$key];
     }
 
     /**
@@ -155,9 +156,9 @@ class ConfigManager
      * @param bool $firstDb
      * @return string
      */
-    public static function getDb(string $key, bool $firstDb): string
+    public function getDb(string $key, bool $firstDb): string
     {
-        return $firstDb ? self::$firstDb[$key] : self::$secondDb[$key];
+        return $firstDb ? $this->firstDb[$key] : $this->secondDb[$key];
     }
 }
 

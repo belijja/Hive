@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Pgda\Messages;
 
-use Configs\PgdaCodes;
+use Configs\PgdaConfigs;
 use Pgda\Fields\AbstractField;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
@@ -141,7 +141,7 @@ class Message implements \Iterator
                 case -42:// header not found
                     LogManager::log('pgda', false, "PGDA header not found: " . $exception->getMessage());
                     if ($cnt <= 3) {
-                        $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId(PgdaCodes::getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
+                        $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId(PgdaConfigs::getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
                         $this->writeHeader();
                         $binaryMessage = $this->getHeader() . $this->getBody();
                         sleep(1);
@@ -170,7 +170,7 @@ class Message implements \Iterator
     private function sendMessage(string $binaryMessage, string $serverPathSuffix): bool
     {
         $signedData = $this->signData($binaryMessage);
-        $this->url = PgdaCodes::getPgdaServerCodes('scheme') . "://" . PgdaCodes::getPgdaServerCodes('address') . ":" . PgdaCodes::getPgdaServerCodes('port') . PgdaCodes::getPgdaServerCodes('path') . $serverPathSuffix;
+        $this->url = PgdaConfigs::getPgdaServerCodes('scheme') . "://" . PgdaConfigs::getPgdaServerCodes('address') . ":" . PgdaConfigs::getPgdaServerCodes('port') . PgdaConfigs::getPgdaServerCodes('path') . $serverPathSuffix;
         $curl = curl_init($this->url);
         $options = [
             CURLOPT_POSTFIELDS     => $signedData,
@@ -211,8 +211,8 @@ class Message implements \Iterator
         $binaryIn = tempnam(sys_get_temp_dir(), uniqid() . '_AAMSmsg_' . md5(microtime()));
         $signedOut = tempnam(sys_get_temp_dir(), uniqid() . '_Signed_AAMSmsg_' . md5(microtime()));
         file_put_contents($binaryIn, $binaryMessage);
-        $stringKey = openssl_pkey_get_private('file://' . PgdaCodes::getPgdaCertificates('private'), PgdaCodes::getPgdaCertificates('privatePassword'));
-        openssl_pkcs7_sign($binaryIn, $signedOut, file_get_contents(PgdaCodes::getPgdaCertificates('private')), $stringKey, [], PKCS7_BINARY | PKCS7_NOINTERN | PKCS7_NOCERTS);
+        $stringKey = openssl_pkey_get_private('file://' . PgdaConfigs::getPgdaCertificates('private'), PgdaConfigs::getPgdaCertificates('privatePassword'));
+        openssl_pkcs7_sign($binaryIn, $signedOut, file_get_contents(PgdaConfigs::getPgdaCertificates('private')), $stringKey, [], PKCS7_BINARY | PKCS7_NOINTERN | PKCS7_NOCERTS);
         $returnString = file_get_contents($signedOut);
         //Remove all mime headers from signed message
         $arrayMsg = explode("\n", $returnString);
@@ -259,12 +259,12 @@ class Message implements \Iterator
                 throw new \LogicException ("Can not write header packet while aamsGioco is not defined Error in " . __METHOD__ . " on line: " . __LINE__);
             }
         }
-        LogManager::log('pgda', false, "AAMS_CONC: " . PgdaCodes::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaCodes::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
+        LogManager::log('pgda', false, "AAMS_CONC: " . PgdaConfigs::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaConfigs::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
         $messageHeader = new Message();
         $messageHeader->attach(PField::set("Num. vers. Protoc.", PField::byte, 2));
-        $messageHeader->attach(PField::set("Cod. Forn. Servizi", PField::int, PgdaCodes::getPgdaAamsCodes('fsc')));
-        $messageHeader->attach(PField::set("Cod. Conc. Trasm.", PField::int, PgdaCodes::getPgdaAamsCodes('conc')));
-        $messageHeader->attach(PField::set("Cod. Conc. Propo.", PField::int, PgdaCodes::getPgdaAamsCodes('conc')));
+        $messageHeader->attach(PField::set("Cod. Forn. Servizi", PField::int, PgdaConfigs::getPgdaAamsCodes('fsc')));
+        $messageHeader->attach(PField::set("Cod. Conc. Trasm.", PField::int, PgdaConfigs::getPgdaAamsCodes('conc')));
+        $messageHeader->attach(PField::set("Cod. Conc. Propo.", PField::int, PgdaConfigs::getPgdaAamsCodes('conc')));
         $messageHeader->attach(PField::set("Codice Gioco.", PField::int, $this->aamsGioco));
         $messageHeader->attach(PField::set("Cod. Tipo Gioco.", PField::byte, $this->aamsGiocoId));
         $messageHeader->attach(PField::set("Tipo Mess.", PField::string, $this->messageId, 4));

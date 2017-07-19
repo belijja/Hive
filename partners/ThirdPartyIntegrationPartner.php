@@ -14,24 +14,26 @@ use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 use Helpers\LogHelpers\LogManager;
 use Helpers\ConfigHelpers\Db;
+use Services\AbstractContainer;
 
 /**
  * Class ThirdPartyIntegrationPartner
  * @package Partners
  */
-class ThirdPartyIntegrationPartner implements IPartner
+class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
 {
     private $soapClient;
     private $db;
     private $logger;
     private $serverManager;
 
-    public function __construct(ThirdPartyIntegrationSoapClient $soapClient, Db $db, LogManager $logger, ServerManager $serverManager)
+    public function __construct(ThirdPartyIntegrationSoapClient $soapClient, ServerManager $serverManager)
     {
+        parent::__construct();
         $this->soapClient = $soapClient;
-        $this->db = $db;
-        $this->logger = $logger;
         $this->serverManager = $serverManager;
+        $this->db = $this->container->get('Db');
+        $this->logger = $this->container->get('Logger');
     }
 
     /**

@@ -7,13 +7,15 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
 class GameProviderConfigs
 {
-    private static $gameProviderConfigs = [
+    use ServiceContainer;
+
+    private $gameProviderConfigs = [
         'tpg'         => [
             'password'     => 'tpgpass',
             'providerId'   => 9,
@@ -71,8 +73,8 @@ class GameProviderConfigs
         ]
     ];
 
-    public static function getGameProviderConfigs(int $providerName = null): array
+    public function getGameProviderConfigs(int $providerName = null): array
     {
-        return !is_null($providerName) ? ConfigManager::checkIfArrayExists((string)$providerName, self::$gameProviderConfigs) : self::$gameProviderConfigs;
+        return !is_null($providerName) ? $this->container->get('Config')->checkIfArrayExists((string)$providerName, $this->gameProviderConfigs) : $this->gameProviderConfigs;
     }
 }

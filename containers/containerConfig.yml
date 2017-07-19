@@ -1,0 +1,27 @@
+services:
+    Db:
+        class:  Services\Db
+
+    Logger:
+        class:  Services\LogManager
+
+    Config:
+        class:  Services\ConfigManager
+
+    CurrencyConfig:
+        class:  Services\CurrencyConfigs
+
+    GameProviderConfig:
+        class:  Services\GameProviderConfigs
+
+    PartnerConfig:
+        class:  Services\PartnerConfigs
+
+    PgdaConfig:
+        class:  Services\PgdaConfigs
+
+    SkinConfig:
+        class:  Services\SkinConfigs
+
+    SKSConfig:
+        class:  Services\SKSConfigs

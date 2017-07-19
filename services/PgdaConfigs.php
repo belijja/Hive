@@ -7,13 +7,15 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
-class PgdaCodes
+class PgdaConfigs
 {
-    private static $pgdaPrefixCasinoCodesPrimary = [
+    use ServiceContainer;
+
+    private $pgdaPrefixCasinoCodesPrimary = [
         'create'         => 40002,
         //if you want to switch to default configs comment this primary value and put null on that place
         'createTest'     => 40000000,
@@ -24,7 +26,7 @@ class PgdaCodes
         'sessionBalance' => 59000
     ];
 
-    private static $pgdaPrefixCasinoCodesDefault = [
+    private $pgdaPrefixCasinoCodesDefault = [
         'create'         => 40000,
         'createTest'     => 40000000,
         'transaction'    => 42000,
@@ -34,7 +36,7 @@ class PgdaCodes
         'sessionBalance' => 59000
     ];
 
-    private static $pgdaServerPrimary = [//primary and default are the same?
+    private $pgdaServerPrimary = [//primary and default are the same?
         'scheme'         => 'http',
         'address'        => '81.2.205.160',
         'port'           => '80',
@@ -46,7 +48,7 @@ class PgdaCodes
         '780Path'        => '780'
     ];
 
-    private static $pgdaServerDefault = [
+    private $pgdaServerDefault = [
         'scheme'         => 'http',
         'address'        => '81.2.205.160',
         'port'           => '80',
@@ -58,35 +60,35 @@ class PgdaCodes
         '780Path'        => '780'
     ];
 
-    private static $pgdaAamsPrimary = [
+    private $pgdaAamsPrimary = [
         'conc'         => 15242,
         'fsc'          => 70,
         'maxSendTries' => 3
     ];
-    private static $pgdaAamsDefault = [
+    private $pgdaAamsDefault = [
         'conc'         => 15079,
         'fsc'          => 89,
         'maxSendTries' => 3
     ];
 
-    private static $pgdaCertificatesPrimary = [
+    private $pgdaCertificatesPrimary = [
         'private'         => 'pgda/Certificates/firma-2.pem',
         'privatePassword' => 'sks_test',
         'sogeiPublic'     => 'pgda/Certificates/sogei.cer'
     ];
-    private static $pgdaCertificatesDefault = [
+    private $pgdaCertificatesDefault = [
         'private'         => 'pgda/Certificates/firma_sks_test.pem',
         'privatePassword' => 'sks_test',
         'sogeiPublic'     => 'pgda/Certificates/sogei.cer'
     ];
 
-    private static $pgdaPrefixPrimary = [
+    private $pgdaPrefixPrimary = [
         'updateSessionEnd' => 81000,
         'sendModuleList'   => 83000,
         'retry'            => 42424242
     ];
 
-    private static $pgdaPrefixDefault = [
+    private $pgdaPrefixDefault = [
         'updateSessionEnd' => 81000,
         'sendModuleList'   => 83000,
         'retry'            => 42424242
@@ -96,44 +98,44 @@ class PgdaCodes
      * @param string $pgdaKey
      * @return string
      */
-    public static function getPgdaPrefix(string $pgdaKey): string
+    public function getPgdaPrefix(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixDefault);
+        return ($this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixPrimary) != '') ? $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixPrimary) : $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixDefault);
     }
 
     /**
      * @param string $pgdaKey
      * @return string
      */
-    public static function getPgdaCertificates(string $pgdaKey): string
+    public function getPgdaCertificates(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaCertificatesDefault);
+        return ($this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaCertificatesPrimary) != '') ? $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaCertificatesPrimary) : $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaCertificatesDefault);
     }
 
     /**
      * @param string $pgdaKey
      * @return string
      */
-    public static function getPgdaAamsCodes(string $pgdaKey): string
+    public function getPgdaAamsCodes(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaAamsDefault);
+        return ($this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaAamsPrimary) != '') ? $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaAamsPrimary) : $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaAamsDefault);
     }
 
     /**
      * @param string $pgdaKey
      * @return string
      */
-    public static function getPgdaServerCodes(string $pgdaKey): string
+    public function getPgdaServerCodes(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaServerDefault);
+        return ($this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaServerPrimary) != '') ? $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaServerPrimary) : $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaServerDefault);
     }
 
     /**
      * @param string $pgdaKey
      * @return string
      */
-    public static function getPgdaCasinoCodes(string $pgdaKey): string
+    public function getPgdaCasinoCodes(string $pgdaKey): string
     {
-        return (ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) != '') ? ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesPrimary) : ConfigManager::checkIfKeyExists((string)$pgdaKey, self::$pgdaPrefixCasinoCodesDefault);
+        return ($this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixCasinoCodesPrimary) != '') ? $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixCasinoCodesPrimary) : $this->container->get('Config')->checkIfKeyExists((string)$pgdaKey, $this->pgdaPrefixCasinoCodesDefault);
     }
 }

@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Users;
 
-use Helpers\ConfigHelpers\Db;
+use Containers\ServiceContainer;
 
 /**
  * Class ServiceUser
@@ -17,11 +17,13 @@ use Helpers\ConfigHelpers\Db;
  */
 class ServiceUser
 {
+    use ServiceContainer;
+
     private $db;
 
-    public function __construct(Db $db)
+    public function __construct()
     {
-        $this->db = $db;
+        $this->db = $this->container->get('Db');
     }
 
     /**

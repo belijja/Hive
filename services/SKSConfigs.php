@@ -7,14 +7,15 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
-class SKSCodes
+class SKSConfigs
 {
+    use ServiceContainer;
 
-    private static $countryCodes = [
+    private $countryCodes = [
         '1'   => [
             'code' => 'AF',
             'name' => 'AFGHANISTAN'
@@ -945,7 +946,7 @@ class SKSCodes
         ],
     ];
 
-    private static $PGDARegionCodes = [
+    private $PGDARegionCodes = [
         'PIE' => 1,
         'VDA' => 2,
         'LOM' => 3,
@@ -967,12 +968,12 @@ class SKSCodes
         'SAR' => 20,
     ];
 
-    private static $PGDAProvinceCodes = [
+    private $PGDAProvinceCodes = [
         'BZ' => 21,
         'TN' => 22,
     ];
 
-    private static $currencyCodes = [
+    private $currencyCodes = [
         '1' => [
             'code'        => 'EUR',
             'description' => 'Euro'
@@ -1000,9 +1001,9 @@ class SKSCodes
      * @return array
      * @throws \SoapFault
      */
-    public static function getCurrencyCodes(string $key): array
+    public function getCurrencyCodes(string $key): array
     {
-        return ConfigManager::checkIfArrayExists($key, self::$currencyCodes);
+        return $this->container->get('Config')->checkIfArrayExists($key, $this->currencyCodes);
     }
 
     /**
@@ -1010,18 +1011,18 @@ class SKSCodes
      * @return array
      * @throws \SoapFault
      */
-    public static function getCountryCodes(string $key): array
+    public function getCountryCodes(string $key): array
     {
-        return ConfigManager::checkIfArrayExists($key, self::$countryCodes);
+        return $this->container->get('Config')->checkIfArrayExists($key, $this->countryCodes);
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getPGDARegionCodes(string $key): string
+    public function getPGDARegionCodes(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, self::$PGDARegionCodes);
+        return $this->container->get('Config')->checkIfKeyExists($key, $this->PGDARegionCodes);
     }
 
     /**
@@ -1029,9 +1030,9 @@ class SKSCodes
      * @return string
      * @throws \SoapFault
      */
-    public static function getPGDAProvinceCodes(string $key): string
+    public function getPGDAProvinceCodes(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, self::$PGDAProvinceCodes);
+        return $this->container->get('Config')->checkIfKeyExists($key, $this->PGDAProvinceCodes);
     }
 
 }

@@ -9,13 +9,11 @@ declare(strict_types = 1);
 
 namespace Partners;
 
-use Helpers\ConfigHelpers\ConfigManager;
-use Configs\SKSCodes;
-use Configs\CurrencyCodes;
-use Helpers\LogHelpers\LogManager;
+use Configs\SKSConfigs;
+use Configs\CurrencyConfigs;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\SKSSoapClient;
-use Helpers\ConfigHelpers\Db;
+use Containers\ServiceContainer;
 
 /**
  * Class SKSPartners
@@ -23,24 +21,26 @@ use Helpers\ConfigHelpers\Db;
  */
 class SKSPartner implements IPartner
 {
+    use ServiceContainer;
+
     private $soapClient;
+    private $serverManager;
     private $db;
     private $logger;
-    private $serverManager;
+    private $configManager;
 
     /**
      * SKSPartner constructor.
      * @param SKSSoapClient $soapClient
-     * @param Db $db
-     * @param LogManager $logger
      * @param ServerManager $serverManager
      */
-    public function __construct(SKSSoapClient $soapClient, Db $db, LogManager $logger, ServerManager $serverManager)
+    public function __construct(SKSSoapClient $soapClient, ServerManager $serverManager)
     {
         $this->soapClient = $soapClient;
-        $this->db = $db;
-        $this->logger = $logger;
         $this->serverManager = $serverManager;
+        $this->db = $this->container->get('Db');
+        $this->logger = $this->container->get('Logger');
+        $this->configManager = $this->container->get('Config');
     }
 
     /**
@@ -92,20 +92,20 @@ class SKSPartner implements IPartner
             $params['email'] = $user->Email;
             $params['firstName'] = $user->Firstname;
             $params['lastName'] = $user->Lastname;
-            if (isset($user->RegionResidenceCode) && SKSCodes::getPGDARegionCodes($user->RegionResidenceCode) != null) {
-                $params['state'] = SKSCodes::getPGDARegionCodes($user->RegionResidenceCode);
-            } else if (isset($user->ProvinceResidenceCode) && SKSCodes::getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
-                $params['state'] = SKSCodes::getPGDAProvinceCodes($user->ProvinceResidenceCode);
+            if (isset($user->RegionResidenceCode) && SKSConfigs::getPGDARegionCodes($user->RegionResidenceCode) != null) {
+                $params['state'] = SKSConfigs::getPGDARegionCodes($user->RegionResidenceCode);
+            } else if (isset($user->ProvinceResidenceCode) && SKSConfigs::getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
+                $params['state'] = SKSConfigs::getPGDAProvinceCodes($user->ProvinceResidenceCode);
             } else {
                 $params['state'] = 99;
             }
             $params['city'] = $user->City;
             $params['street'] = $user->Address;
-            $params['country'] = SKSCodes::getCountryCodes($user->Country)['code'];
+            $params['country'] = SKSConfigs::getCountryCodes($user->Country)['code'];
             $params['zip'] = $user->Zip;
             $params['dateOfBirth'] = substr($user->Birthdate, 0, 10);
             $params['phone'] = $user->Phone;
-            $params['currencyCode'] = SKSCodes::getCurrencyCodes((string)$user->Currency)['code'];
+            $params['currencyCode'] = SKSConfigs::getCurrencyCodes((string)$user->Currency)['code'];
             $params['externalUsername'] = $user->Username;
             if ($query->rowCount() == 0) {
                 $params['active'] = 1;
@@ -116,8 +116,8 @@ class SKSPartner implements IPartner
             } else {
                 $params['username'] = $userDetails->username;
                 $params['isFirstLogin'] = $userDetails->isFirst ? 1 : 0;
-                $currencyId = CurrencyCodes::getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
-                if (CurrencyCodes::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
+                $currencyId = CurrencyConfigs::getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
+                if (CurrencyConfigs::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
                     $this->logger->log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     throw new \SoapFault('-3', 'Currency code has changed.');
                 }
@@ -145,7 +145,7 @@ class SKSPartner implements IPartner
                                              AND provider_id = :SKSProviderId");
         if (!$query->execute([
                 ':fatherId'      => $fatherId,
-                ':SKSProviderId' => ConfigManager::getSKS('localPartnerId')
+                ':SKSProviderId' => $this->configManager->getSKS('localPartnerId')
             ]) || $query->rowCount() == 0
         ) {
             $SKSUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $this->logger, $soapClient);
@@ -163,7 +163,7 @@ class SKSPartner implements IPartner
                     ':phone'    => $user->Phone,
                     ':city'     => $user->City,
                     ':address'  => $user->Address,
-                    ':country'  => SKSCodes::getCountryCodes($user->Country)['code'],
+                    ':country'  => SKSConfigs::getCountryCodes($user->Country)['code'],
                     ':zip'      => $user->Zip
                 ]) && $query->rowCount() > 0
             ) {
@@ -171,7 +171,7 @@ class SKSPartner implements IPartner
                 $query = $this->db->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
-                    ':providerId'          => ConfigManager::getSKS('localPartnerId'),
+                    ':providerId'          => $this->configManager->getSKS('localPartnerId'),
                     ':providerAffiliateId' => $fatherId,
                     ':pokerAffiliateId'    => $pokerAffiliateId
                 ])

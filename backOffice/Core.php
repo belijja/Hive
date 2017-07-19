@@ -9,24 +9,15 @@ declare(strict_types = 1);
 
 namespace BackOffice;
 
-use Helpers\ConfigHelpers\Db;
+use Containers\ServiceContainer;
 
 class Core
 {
-    private $db;
-
-    /**
-     * Core constructor.
-     * @param Db $db
-     */
-    public function __construct(Db $db)
-    {
-        $this->db = $db;
-    }
+    use ServiceContainer;
 
     public function getGameShortData(int $gameId): array
     {
-        $query = $this->db->getDb(false)->prepare("
+        $query = $this->container->get('Db')->getDb(false)->prepare("
                 SELECT 
 				pro.provider_id,
 				game.aams_game_id_desktop,

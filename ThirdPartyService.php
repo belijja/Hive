@@ -20,11 +20,12 @@ use Models\ServiceModels\GameURL;
 use Models\ServiceModels\WalletedGameURL;
 use Models\PgdaModels;
 //helpers
-use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\SoapHelpers\SoapManager;
 use Helpers\ParamHelpers\ParamManager;
 use Helpers\SessionHelpers\SessionManager;
 use Helpers\SoapHelpers\NetentSoapClient;
+use Helpers\SoapHelpers\SKSSoapClient;
+use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
 //partners
 use Partners\IPartner;
 //users
@@ -34,18 +35,23 @@ use BackOffice\Core;
 use BackOffice\Bonus;
 //providers
 use Providers\NetentProvider;
-//configs
-use Configs\PartnerConfigs;
 //pgda
 use Pgda\PGDAIntegration;
+//server
+use Helpers\ServerHelpers\ServerManager;
+//partners
+use Partners\SKSPartner;
+use Partners\ThirdPartyIntegrationPartner;
 //service container
-use Services\Container;
+use Containers\ServiceContainer;
 
 /**
  * Class ThirdPartyService
  */
 class ThirdPartyService
 {
+    use ServiceContainer;
+
     public $soapManager;
     public $paramManager;
     public $SKS;
@@ -118,10 +124,10 @@ class ThirdPartyService
                 return $response;
             }
             $is_demo = ($option & 2) && $gameId != 0;
-            $partnerIdFromConfigFile = (int)PartnerConfigs::getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
+            $partnerIdFromConfigFile = (int)$this->container->get('PartnerConfig')->getPartnerConfigs($_SERVER['PHP_AUTH_USER'])['providerId'];//making variable shorter
             if (!$is_demo) {//if it's not demo game
                 if ($partnerIdFromConfigFile === 2) {//registering if it's SKS user
-                    $this->SKS->checkAndRegisterUser($userId, $skinId, (int)ConfigManager::getSKS('localPartnerId'));
+                    $this->SKS->checkAndRegisterUser($userId, $skinId, (int)$this->container->get('Config')->getSKS('localPartnerId'));
                 } else {//registering if it's third party user
                     $this->thirdPartyIntegration->checkAndRegisterUser($userId, $skinId, $partnerIdFromConfigFile);
                 }
@@ -161,7 +167,7 @@ class ThirdPartyService
                     'amount'           => $amountInCents
                 ];
                 $gameData = $this->core->getGameShortData($gameId);//fetching info about the game from back office
-                if ($gameData['provider_id'] == ConfigManager::getNetent('externalProviderId')) {//if netent is game provider
+                if ($gameData['provider_id'] == $this->container->get('Config')->getNetent('externalProviderId')) {//if netent is game provider
                     if (!$is_demo) {//if it's not a demo game
                         $params['sessionId'] = $this->NetentProvider->login($thirdPartyServiceUser, $gameData, $amountInCents, $ip, $platform, $campaignId);
                     } else {//if it is a demo game
@@ -199,7 +205,6 @@ class ThirdPartyService
     }
 }
 
-ConfigManager::parseConfigFile();//parsing config file once at the beginning of any api call
 $uri = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'];
 
 if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in browser
@@ -208,12 +213,10 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $wsdl->setUri($uri);
     $wsdl->handle();
 } else {//if there is no wsdl in url
-    $serviceContainer = new Container();
-    $container = $serviceContainer->getService();
-    $thirdPartyService = new ThirdPartyService($container->get('SoapManager'), $container->get('ParamManager'), $container->get('SKSPartner'), $container->get('ThirdPartyIntegrationPartner'), $container->get('ServiceUser'), $container->get('SessionManager'), $container->get('Core'), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
+    $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(new SKSSoapClient(), new ServerManager()), new ThirdPartyIntegrationPartner(new ThirdPartyIntegrationSoapClient(), new ServerManager()), new ServiceUser(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
-    if (!isset($user) || !isset($pass) || PartnerConfigs::getPartnerConfigs($user) == null || PartnerConfigs::getPartnerConfigs($user)['password'] != $pass) {//basic auth check
+    if (!isset($user) || !isset($pass) || $this->container->get('PartnerConfig')->getPartnerConfigs($user) == null || $this->container->get('PartnerConfig')->getPartnerConfigs($user)['password'] != $pass) {//basic auth check
         header('WWW-Authenticate: Basic realm="ThirdPartyService"');
         header('HTTP/1.0 401 Unauthorized');
         echo 'Unauthorized';

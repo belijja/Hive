@@ -7,12 +7,14 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
-class CurrencyCodes
+class CurrencyConfigs
 {
+    use ServiceContainer;
+
     private const  MONEY_SYMBOL = "&euro;";
     private const  CURRENCY_ID_ACCOUNT = 0;
     private const  CURRENCY_ID_EUR = 1;
@@ -27,7 +29,7 @@ class CurrencyCodes
     private const  CURRENCY_ID_UAH = 10;
     private const  CURRENCY_ID_PEN = 11;
 
-    private static $currencyNames = [
+    private $currencyNames = [
         "1"  => "EUR",
         "2"  => "USD",
         "3"  => "GBP",
@@ -40,7 +42,7 @@ class CurrencyCodes
         "10" => "UAH",
         "11" => "PEN"
     ];
-    private static $currencyIds = [
+    private $currencyIds = [
         "EUR" => self::CURRENCY_ID_EUR,
         "USD" => self::CURRENCY_ID_USD,
         "GBP" => self::CURRENCY_ID_GBP,
@@ -58,18 +60,18 @@ class CurrencyCodes
      * @param string $key
      * @return string
      */
-    public static function getCurrencyNames(string $key): string
+    public function getCurrencyNames(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, self::$currencyNames);
+        return $this->container->get('Config')->checkIfKeyExists($key, $this->currencyNames);
     }
 
     /**
      * @param string $key
      * @return string
      */
-    public static function getCurrencyIds(string $key): string
+    public function getCurrencyIds(string $key): string
     {
-        return ConfigManager::checkIfKeyExists($key, self::$currencyIds);
+        return $this->container->get('Config')->checkIfKeyExists($key, $this->currencyIds);
     }
 
 }

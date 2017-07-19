@@ -11,9 +11,18 @@ namespace Helpers\SoapHelpers;
 
 use Configs\SkinConfigs;
 use Helpers\LogHelpers\LogManager;
+use Services\AbstractContainer;
 
-class ThirdPartyIntegrationSoapClient implements ISoapClient
+class ThirdPartyIntegrationSoapClient extends AbstractContainer implements ISoapClient
 {
+    /**
+     * ThirdPartyIntegrationSoapClient constructor.
+     */
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
     /**
      * @param int $userId
      * @param int $pokerSkinId
@@ -85,7 +94,7 @@ class ThirdPartyIntegrationSoapClient implements ISoapClient
             }
         }
         $response = $soapClient->UserGetInfo($params);
-        $logger->log('error', true, 'ThirdPartySoapClient Response ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($response, true));
+        $this->container->get('Logger')->log('error', true, 'ThirdPartySoapClient Response ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($response, true));
         return $response;*/
     }
 

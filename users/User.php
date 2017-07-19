@@ -422,6 +422,6 @@ class User
      */
     public function logSession(string $message): void
     {
-        LogManager::log('session', true, 'Session ID ' . $this->externalSessionId . ' ' . $message . "\n");
+        $this->container->get('Logger')->log('session', true, 'Session ID ' . $this->externalSessionId . ' ' . $message . "\n");
     }
 }

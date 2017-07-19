@@ -7,13 +7,15 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
 class PartnerConfigs
 {
-    private static $partnerConfigs = [
+    use ServiceContainer;
+
+    private $partnerConfigs = [
         'pw'         => [
             'password'   => 'pwpass',
             'providerId' => 2,
@@ -32,8 +34,8 @@ class PartnerConfigs
         ]
     ];
 
-    public static function getPartnerConfigs($partnerName)
+    public function getPartnerConfigs($partnerName)
     {
-        return ConfigManager::checkIfArrayExists((string)$partnerName, self::$partnerConfigs);
+        return $this->container->get('Config')->checkIfArrayExists((string)$partnerName, $this->partnerConfigs);
     }
 }

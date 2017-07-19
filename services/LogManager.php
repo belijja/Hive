@@ -7,16 +7,18 @@
  */
 declare(strict_types = 1);
 
-namespace Helpers\LogHelpers;
+namespace Services;
 
 use Monolog\Formatter\HtmlFormatter;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
 class LogManager
 {
+    use ServiceContainer;
+
     /**
      * @param string $logLevel
      * @param bool $isLineFormatter
@@ -28,10 +30,11 @@ class LogManager
         $reflection = new \ReflectionClass('Monolog\Logger');
         $constants = $reflection->getConstants();
         $log = new Logger('Service');
-        $handler = new StreamHandler(ConfigManager::getLog('logDir') . $logLevel . '(' . date('Y-m-d') . ')' . ($isLineFormatter ? '.log' : '.html'), $constants[strtoupper($logLevel)], false, 0777);
+        $handler = new StreamHandler($this->container->get('Config')->getLog('logDir') . $logLevel . '(' . date('Y-m-d') . ')' . ($isLineFormatter ? '.log' : '.html'), $constants[strtoupper($logLevel)], false, 0777);
         $handler->setFormatter($isLineFormatter ? new LineFormatter(null, null, false, true) : new HtmlFormatter());
         $log->pushHandler($handler);
         $log->$logLevel($errorText);
         return $log;
     }
+
 }

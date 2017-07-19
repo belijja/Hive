@@ -7,9 +7,9 @@
  */
 declare(strict_types = 1);
 
-namespace Configs;
+namespace Services;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
 /**
  * Class SkinConfigs
@@ -17,8 +17,9 @@ use Helpers\ConfigHelpers\ConfigManager;
  */
 class SkinConfigs
 {
+    use ServiceContainer;
 
-    private static $skinConfigs = [
+    private $skinConfigs = [
         0        => [
             'urlLanguages'     => [
                 0  => 'en',
@@ -63,9 +64,9 @@ class SkinConfigs
      * @param int $skinId
      * @return array
      */
-    public static function getSkinConfigs(int $skinId): array
+    public function getSkinConfigs(int $skinId): array
     {
-        return ConfigManager::checkIfArrayExists((string)$skinId, self::$skinConfigs);
+        return $this->container->get('Config')->checkIfArrayExists((string)$skinId, $this->skinConfigs);
     }
 
 }

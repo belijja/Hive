@@ -9,11 +9,12 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Helpers\ConfigHelpers\ConfigManager;
 use Helpers\LogHelpers\LogManager;
+use Services\Container;
 
 class SKSSoapClient implements ISoapClient
 {
+    use Container;
 
     /**
      * @param int $userId
@@ -74,7 +75,7 @@ class SKSSoapClient implements ISoapClient
             $response->GetUserInfoResult->_UserID = (int)$response->GetUserInfoResult->_UserInfo->UserID;
             $response->GetUserInfoResult->_FatherID = (int)$response->GetUserInfoResult->_UserInfo->FatherID;
         } else {
-            $logger->log('error', true, 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($params, true));
+            $this->container->get('Logger')->log('error', true, 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ .  ' VARIABLE: ' . var_export($params, true));
         }
         return $response;
     }

@@ -10,15 +10,14 @@ declare(strict_types = 1);
 namespace Providers;
 
 use BackOffice\Bonus;
-use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\ConfigHelpers\Db;
 use Helpers\SoapHelpers\NetentSoapClient;
 use Users\UserFactory;
 use Pgda\PGDAIntegration;
-use Helpers\LogHelpers\LogManager;
+use Containers\ServiceContainer;
 
 class NetentProvider
 {
+    use ServiceContainer;
 
     private $netentSoapClient;
     private $bonus;
@@ -87,14 +86,14 @@ class NetentProvider
                 throw new \SoapFault('101', 'Cashier token already made, logout and login to obtain new cashier token.');
             }//uncomment this part when method is done because this part will exit the method because there is a cashierToken returned from function
         }*/
-        if ((bool)ConfigManager::getIT('isItalian') === true) {
+        if ((bool)$this->container->get('Config')->getIT('isItalian') === true) {
             $aamsGameCode = !!($thirdPartyServiceUser['sessionData']['option'] & 1) ? $gameData['aams_game_id_mobile'] : $gameData['aams_game_id_desktop'];
             if (empty($aamsGameCode)) {
-                LogManager::log('error', true, 'aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                $this->container->get('Logger')->log('error', true, 'aamsGameCode not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
                 throw new \SoapFault('0', 'Unspecified error.');
             }
             if (empty($gameData['aams_game_type'])) {
-                LogManager::log('error', true, 'aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+                $this->container->get('Logger')->log('error', true, 'aamsGameType not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
                 throw new \SoapFault('0', 'Unspecified error.');
             } else {
                 $aamsGameType = $gameData['aams_game_type'];
@@ -106,27 +105,27 @@ class NetentProvider
             $aamsGameType = '';
         }
         $date = time();
-        Db::getInstance(ConfigManager::getDb('database', true))->beginTransaction();
+        $this->container->get('Db')->getDb(true)->beginTransaction();
         try {
             $cashierToken = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
             $qOne = "UPDATE thirdparty_sessions SET session_id = :sessionId WHERE id = :sessionId";
             $qTwo = "INSERT INTO tp_open_sessions (session_id, last_ping) VALUES (:sessionId, NOW())";
-            $queryOne = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qOne);
-            $queryTwo = Db::getInstance(ConfigManager::getDb('database', true))->prepare($qTwo);
+            $queryOne = $this->container->get('Db')->getDb(true)->prepare($qOne);
+            $queryTwo = $this->container->get('Db')->getDb(true)->prepare($qTwo);
             if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([
                     ':sessionId' => $user->sessionId
                 ])
             ) {
-                Db::getInstance(ConfigManager::getDb('database', true))->commit();
+                $this->container->get('Db')->getDb(true)->commit();
             }
         } catch (\SoapFault $soapFault) {
-            Db::getInstance(ConfigManager::getDb('database', true))->rollBack();
-            LogManager::log('error', true, "Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+            $this->container->get('Db')->getDb(true)->rollBack();
+            $this->container->get('Logger')->log('error', true, "Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             throw new \SoapFault('0', 'Unspecified error.');
         }
         if (isset($amountInCents) && $amountInCents == 0 && (!isset($campaignId) || $campaignId == 0)) {
             return [
-                'returnCode'          => ConfigManager::getIT('isItalian') ? 0 : 1,
+                'returnCode'          => $this->container->get('Config')->getIT('isItalian') ? 0 : 1,
                 'sessionId'           => null,
                 'amount'              => null,
                 'cashierToken'        => $cashierToken,
@@ -137,7 +136,7 @@ class NetentProvider
         if (isset($gameData['is_slot'])) {
             $isSlot = $gameData['is_slot'];
         } else {
-            LogManager::log('error', true, 'is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
+            $this->container->get('Logger')->log('error', true, 'is_slot not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($gameData, true));
             throw new \SoapFault('0', 'Unspecified error.');
         }
         //insert session, state 0
@@ -152,7 +151,7 @@ class NetentProvider
                         $user->sendNotification(2);
                     }
                 } else {
-                    LogManager::log('error', true, "Wagering weekdays not set! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    $this->container->get('Logger')->log('error', true, "Wagering weekdays not set! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                 }
             } else {
                 $bonus = null;
@@ -169,7 +168,7 @@ class NetentProvider
                 $realAmount = $amountInCents;
             }
             $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", realAmount = " . $realAmount . ", bonus = " . $bonus . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
-            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
+            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
             if (/*!$query->execute([
                     ':id'          => $user->sessionId,
                     ':userId'      => $user->user['userid'],
@@ -185,7 +184,7 @@ class NetentProvider
             }
         } else {
             $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", campaignId = " . $campaignId . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
-            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("INSERT INTO tp_ext_sessions (id, uid, state, ip, platform, campaign_id) VALUES (:id, :userId, 0, :ip, :platform, :campaignId)");
+            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_sessions (id, uid, state, ip, platform, campaign_id) VALUES (:id, :userId, 0, :ip, :platform, :campaignId)");
             if (!$query->execute([
                     ':id'         => $user->sessionId,
                     ':userId'     => $user->user['userid'],
