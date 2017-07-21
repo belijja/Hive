@@ -9,18 +9,15 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Helpers\LogHelpers\LogManager;
-
 interface ISoapClient
 {
     /**
      * @param int $userId
      * @param int $skinId
-     * @param LogManager $logger
      * @param \SoapClient $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $skinId, LogManager $logger, \SoapClient $soapClient): /*array*/
+    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient): /*array*/
     \stdClass;
 
 }

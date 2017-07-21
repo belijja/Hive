@@ -9,13 +9,13 @@ declare(strict_types = 1);
 
 namespace Users;
 
-use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\ConfigHelpers\Db;
 use BackOffice\Bonus;
-use Helpers\LogHelpers\LogManager;
+use Containers\ServiceContainer;
 
 class User
 {
+    use ServiceContainer;
+
     public $user;
     protected $config;
     protected $bonus;
@@ -58,8 +58,8 @@ class User
               tes.id as ext_session_id, tes.state as ext_session_state, tes.campaign_id, tes.amount as balance 
               FROM thirdparty_sessions ts 
               LEFT JOIN tp_ext_sessions tes ON ts.session_id = tes.id 
-              LEFT JOIN " . ConfigManager::getDb('database', false) . ".hg_provider p ON ts.thirdparty_provider_id = p.provider_id 
-              LEFT JOIN " . ConfigManager::getDb('database', false) . ".hg_game g ON ts.game_id = g.internal_game_id 
+              LEFT JOIN " . $this->container->get('Config')->getDb('database', false) . ".hg_provider p ON ts.thirdparty_provider_id = p.provider_id 
+              LEFT JOIN " . $this->container->get('Config')->getDb('database', false) . ".hg_game g ON ts.game_id = g.internal_game_id 
               WHERE ts.thirdparty_provider_id = :providerId
               AND ts.thirdparty_session_id = :netentSessionId 
               AND ts.uid = :userId";
@@ -67,7 +67,7 @@ class User
             $q .= " AND ts.game_id = :gameId";
         }
         $q .= " ORDER BY ts.seq DESC LIMIT 1";
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        $query = $this->container->get('Db')->getDb(true)->prepare($q);
         $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
         $query->bindParam(':netentSessionId', $netentSessionId, \PDO::PARAM_STR);
         $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
@@ -143,7 +143,7 @@ class User
                     $cashierToken = 'X';
                 }
             } else {
-                LogManager::log('error', true, 'Missing session data! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($this->user, true));
+                $this->container->get('Logger')->log('error', true, 'Missing session data! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($this->user, true));
             }
         }
         for ($i = 0; $i < $max; $i++) {
@@ -185,7 +185,7 @@ class User
         }
         $q = "INSERT INTO thirdparty_sessions (session_id, status, uid, thirdparty_provider_id, game_id, seq, thirdparty_session_id, cashiertoken, nrhands, amount, bet, rake, sessionstart, sessionend) 
               VALUES (:sessionId, :status, :userId, :thirdPartyProviderId, :gameId, :sequence, :thirdPartySessionId, :cashierToken, :numberOfHands, :amount, :bet, :rake, FROM_UNIXTIME(:sessionStart), FROM_UNIXTIME(:sessionEnd))";
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        $query = $this->container->get('Db')->getDb(true)->prepare($q);
         if (!$query->execute([
                 ':sessionId'            => $sessionId,
                 ':status'               => $status,
@@ -202,14 +202,13 @@ class User
                 ':rake'                 => $rake,
                 ':sessionStart'         => $startDate,
                 ':sessionEnd'           => $endDate
-            ]) || $query->rowCount() != 1
-        ) {//there will be no insertion because of unique indexed columns in db
+            ]) || $query->rowCount() != 1) {//there will be no insertion because of unique indexed columns in db
             $q = "SELECT id,cashiertoken FROM thirdparty_sessions 
                   WHERE uid = :userId 
                   AND thirdparty_provider_id = :providerId 
                   AND seq = :sequence
                   AND thirdparty_session_id = :sessionId" . ($sequence == 1 ? " AND nrhands = :numberOfHands AND bet = :bet AND rake = :rake" : "");
-            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+            $query = $this->container->get('Db')->getDb(true)->prepare($q);
             $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
             $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
             $query->bindParam(':sequence', $sequence, \PDO::PARAM_INT);
@@ -227,7 +226,7 @@ class User
                     $newCashierToken = $this->updateThirdPartySession($newCashierToken, $numberOfHands, $amount, $bet, $rake);
                 }
             } else {
-                $this->sessionId = Db::getInstance(ConfigManager::getDb('database', true))->lastInsertId();
+                $this->sessionId = $this->container->get('Db')->getDb(true)->lastInsertId();
                 $newCashierToken = $cashierToken;
             }
         }
@@ -258,7 +257,7 @@ class User
               AND thirdparty_provider_id = :providerId 
               AND cashiertoken = :cashierToken
               AND DATE(sessionend) = CURDATE() AND status < 20";
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        $query = $this->container->get('Db')->getDb(true)->prepare($q);
         if (!$query->execute([
                 ':numberOfHands' => $numberOfHands,
                 ':amount'        => $amount,
@@ -268,19 +267,17 @@ class User
                 ':providerId'    => $this->config['providerId'],
                 ':cashierToken'  => $cashierToken
 
-            ]) || $query->rowCount() < 1
-        ) {
+            ]) || $query->rowCount() < 1) {
             $q = "SELECT seq, thirdparty_session_id, game_id, status, session_id FROM thirdparty_sessions 
                   WHERE uid = :userId 
                   AND thirdparty_provider_id = :providerId 
                   AND cashiertoken = :cashierToken";
-            $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+            $query = $this->container->get('Db')->getDb(true)->prepare($q);
             if ($query->execute([
                     ':userId'       => $this->user['userid'],
                     ':providerId'   => $this->config['providerId'],
                     ':cashierToken' => $cashierToken
-                ]) && $query->rowCount() > 0
-            ) {
+                ]) && $query->rowCount() > 0) {
                 $result = $query->fetch(\PDO::FETCH_ASSOC);
                 $newCashierToken = $this->getNewCashierToken($cashierToken);
                 $newCashierToken = $this->insertThirdPartySession((int)$result['status'], $result['thirdparty_session_id'], $result['seq'] + 1, (int)$result['game_id'], $newCashierToken, $numberOfHands, $amount, $bet, $rake, time(), time(), $result['session_id']);
@@ -309,11 +306,10 @@ class User
         if ($forUpdate) {
             $q .= " FOR UPDATE";
         }
-        $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+        $query = $this->container->get('Db')->getDb(true)->prepare($q);
         if ($query->execute([
                 ':userId' => $this->user['userid']
-            ]) && $query->rowCount() > 0
-        ) {
+            ]) && $query->rowCount() > 0) {
             $result = $query->fetch(\PDO::FETCH_ASSOC);
             $bonus = (int)$result['amount'];
         } else {
@@ -337,19 +333,18 @@ class User
         switch ($eventId) {
             case 1://funbonus win notification
                 if (!isset($details['amount'])) {
-                    LogManager::log('error', true, 'Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    $this->container->get('Logger')->log('error', true, 'Amount for funbonus not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     return;
                 }
                 if (isset($details['campaignId'])) {
-                    $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare("SELECT real_campaign_id FROM tp_campaigns WHERE seq = :seq");
+                    $query = $this->container->get('Db')->getDb(true)->prepare("SELECT real_campaign_id FROM tp_campaigns WHERE seq = :seq");
                     if ($query->execute([
                             ':seq' => $details['campaignId']
-                        ]) && $query->rowCount() > 0
-                    ) {
+                        ]) && $query->rowCount() > 0) {
                         $result = $query->fetch(\PDO::FETCH_ASSOC);
                         $realCampaignId = $result['real_campaign_id'];
                     } else {
-                        LogManager::log('error', true, 'Query failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                        $this->container->get('Logger')->log('error', true, 'Query failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                         return;
                     }
                     $campaignMaxWin = $this->bonus->getCampaignMaxWin($realCampaignId);
@@ -362,7 +357,7 @@ class User
             case 2://wagering campaign start notification
                 $wageringCampaignDetails = $this->bonus->getWagerCampaignDetails();
                 if (empty($wageringCampaignDetails)) {
-                    LogManager::log('error', true, 'Wagering campaign not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                    $this->container->get('Logger')->log('error', true, 'Wagering campaign not set! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     return;
                 } else {
                     $bonusAmount = $wageringCampaignDetails['bonus_amount'];
@@ -380,11 +375,10 @@ class User
                 }
                 $datesString = implode("' OR date='", $dates);
                 $q = "SELECT SUM(slot_wager) FROM userstats WHERE uid = :userId AND (date = '$datesString')";
-                $query = Db::getInstance(ConfigManager::getDb('database', true))->prepare($q);
+                $query = $this->container->get('Db')->getDb(true)->prepare($q);
                 if ($query->execute([
                         ':userId' => $this->user['userid']
-                    ]) && $query->rowCount() > 0
-                ) {
+                    ]) && $query->rowCount() > 0) {
                     $result = $query->fetch(\PDO::FETCH_ASSOC);
                     $params['bonusAmount'] = $bonusAmount;
                     $params['multiplier'] = $multiplier;
@@ -394,11 +388,11 @@ class User
                 }
             break;
             default:
-                LogManager::log('error', true, 'Event ID not valid! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                $this->container->get('Logger')->log('error', true, 'Event ID not valid! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                 return;
             break;
         }
-        $url = ConfigManager::getBonus('funBonusNotificationLink') . http_build_query($params);
+        $url = $this->container->get('Config')->getBonus('funBonusNotificationLink') . http_build_query($params);
         $curl = curl_init();
         $options = [
             CURLOPT_URL            => $url,
@@ -411,7 +405,7 @@ class User
         if ($response) {
             return;
         } else {
-            LogManager::log('error', true, 'CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
+            $this->container->get('Logger')->log('error', true, 'CURL notification failed! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' HTTP CODE: ' . var_export($transferInfo, true));
             return;
         }
     }

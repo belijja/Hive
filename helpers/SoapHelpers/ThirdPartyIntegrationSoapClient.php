@@ -9,28 +9,19 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Configs\SkinConfigs;
-use Helpers\LogHelpers\LogManager;
-use Services\AbstractContainer;
+use Containers\ServiceContainer;
 
-class ThirdPartyIntegrationSoapClient extends AbstractContainer implements ISoapClient
+class ThirdPartyIntegrationSoapClient implements ISoapClient
 {
-    /**
-     * ThirdPartyIntegrationSoapClient constructor.
-     */
-    public function __construct()
-    {
-        parent::__construct();
-    }
+    use ServiceContainer;
 
     /**
      * @param int $userId
      * @param int $pokerSkinId
-     * @param LogManager $logger
      * @param \SoapClient|null $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $pokerSkinId, LogManager $logger, \SoapClient $soapClient = null): /*array*/
+    public function getUserInfo(int $userId, int $pokerSkinId, \SoapClient $soapClient = null): /*array*/
     \stdClass
     {
         $response = new \stdClass();
@@ -77,20 +68,20 @@ class ThirdPartyIntegrationSoapClient extends AbstractContainer implements ISoap
         return $response;
         /*$params['userId'] = $userId;
         if ($soapClient == null) {
-            if (isset(SkinConfigs::getSkinConfigs($pokerSkinId)['wsdl'])) {
+            if (isset($this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['wsdl'])) {
                 $params = [
                     'trace'              => 1,
                     'exceptions'         => 0,
                     'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-                    'connection_timeout' => SkinConfigs::getSkinConfigs($pokerSkinId)['apiTimeout']
+                    'connection_timeout' => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['apiTimeout']
                 ];
-                if (isset(SkinConfigs::getSkinConfigs($pokerSkinId)['user'])) {
-                    $params['login'] = SkinConfigs::getSkinConfigs($pokerSkinId)['user'];
-                    $params['password'] = SkinConfigs::getSkinConfigs($pokerSkinId)['password'];
+                if (isset($this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['user'])) {
+                    $params['login'] = $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['user'];
+                    $params['password'] = $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['password'];
                 }
-                $soapClient = new \SoapClient(SkinConfigs::getSkinConfigs($pokerSkinId)['wsdl'], $params);
+                $soapClient = new \SoapClient($this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['wsdl'], $params);
             } else {
-                $soapClient = new SoapProxy(SkinConfigs::getSkinConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
+                $soapClient = new SoapProxy($this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId));//making config variable here or pokerSkinId can be passed and in SoapProxy config variable can be made, same thing
             }
         }
         $response = $soapClient->UserGetInfo($params);

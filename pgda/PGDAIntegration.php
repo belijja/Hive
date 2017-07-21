@@ -9,15 +9,15 @@ declare(strict_types = 1);
 
 namespace Pgda;
 
-use Configs\PgdaConfigs;
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 use Models\PgdaModels;
 use Pgda\Messages\Message400;
-use Helpers\LogHelpers\LogManager;
 
 class PGDAIntegration
 {
-    private $pgdaModels;
+    use ServiceContainer;
+
+    public $pgdaModels;
 
     /**
      * PGDAIntegration constructor.
@@ -26,19 +26,23 @@ class PGDAIntegration
     public function __construct(PgdaModels $pgdaModels)
     {
         $this->pgdaModels = $pgdaModels;
-        $this->pgdaModels->prefixCasinoCreateTest = PgdaConfigs::getPgdaCasinoCodes('createTest');
-        $this->pgdaModels->prefixCasinoCreate = PgdaConfigs::getPgdaCasinoCodes('create');
-        $this->pgdaModels->prefixCasinoTransaction = PgdaConfigs::getPgdaCasinoCodes('transaction');
-        $this->pgdaModels->prefixCasinoDelete = PgdaConfigs::getPgdaCasinoCodes('delete');
-        $this->pgdaModels->prefixCasinoDeleteTest = PgdaConfigs::getPgdaCasinoCodes('deleteTest');
-        $this->pgdaModels->prefixCasinoHistory = PgdaConfigs::getPgdaCasinoCodes('history');
-        $this->pgdaModels->prefixCasinoSessionBalance = PgdaConfigs::getPgdaCasinoCodes('sessionBalance');
+    }
 
-        $this->pgdaModels->serverPathSuffixCash = PgdaConfigs::getPgdaServerCodes('cashPath');
-        $this->pgdaModels->serverPathSuffixTournament = PgdaConfigs::getPgdaServerCodes('tournamentPath');
-        $this->pgdaModels->serverPathSuffixCasino = PgdaConfigs::getPgdaServerCodes('casinoPath');
-        $this->pgdaModels->serverPathSuffix580 = PgdaConfigs::getPgdaServerCodes('580Path');
-        $this->pgdaModels->serverPathSuffix780 = PgdaConfigs::getPgdaServerCodes('780Path');
+    private function setPgdaConfigs()
+    {
+        $this->pgdaModels->prefixCasinoCreateTest = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('createTest');
+        $this->pgdaModels->prefixCasinoCreate = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('create');
+        $this->pgdaModels->prefixCasinoTransaction = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('transaction');
+        $this->pgdaModels->prefixCasinoDelete = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('delete');
+        $this->pgdaModels->prefixCasinoDeleteTest = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('deleteTest');
+        $this->pgdaModels->prefixCasinoHistory = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('history');
+        $this->pgdaModels->prefixCasinoSessionBalance = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('sessionBalance');
+
+        $this->pgdaModels->serverPathSuffixCash = $this->container->get('PgdaConfig')->getPgdaServerCodes('cashPath');
+        $this->pgdaModels->serverPathSuffixTournament = $this->container->get('PgdaConfig')->getPgdaServerCodes('tournamentPath');
+        $this->pgdaModels->serverPathSuffixCasino = $this->container->get('PgdaConfig')->getPgdaServerCodes('casinoPath');
+        $this->pgdaModels->serverPathSuffix580 = $this->container->get('PgdaConfig')->getPgdaServerCodes('580Path');
+        $this->pgdaModels->serverPathSuffix780 = $this->container->get('PgdaConfig')->getPgdaServerCodes('780Path');
     }
 
 
@@ -57,6 +61,7 @@ class PGDAIntegration
     //start of session message 400
     public function casinoCreate(int $aamsGameCode, int $aamsGameType, string $sessionId, string $datetime, bool $isFun = null, bool $gameTesting = null): array
     {
+        $this->setPgdaConfigs();
         $parsedDate = $this->getPgdaDateAsArray($datetime);
         $endDate = $this->getPgdaEndDateAsArray($datetime);
         if ($gameTesting) {
@@ -83,7 +88,7 @@ class PGDAIntegration
             }
             $returnCode = $message->send($transactionCode, $aamsGameCode, $aamsGameType, $this->pgdaModels->serverPathSuffixCasino);
             if ($returnCode != 0) {
-                $this->logger->log('pgda', false, $message->getDebugAsHtml());
+                $this->container->get('Logger')->log('pgda', false, $message->getDebugAsHtml());
                 return [
                     "status" => $returnCode
                 ];
@@ -120,7 +125,7 @@ class PGDAIntegration
 
     private function getPgdaEndDateAsArray(string $datetime): array
     {
-        $duration = ConfigManager::getPgda('sessionDuration') != '' ? ConfigManager::getPgda('sessionDuration') : '+5 days';
+        $duration = $this->container->get('Config')->getPgda('sessionDuration') != '' ? $this->container->get('Config')->getPgda('sessionDuration') : '+5 days';
         return getdate(strtotime($duration, strtotime($datetime)));
 
     }
@@ -133,7 +138,7 @@ class PGDAIntegration
     {
         $parsedDate = date_parse($date);
         if (!$parsedDate) {
-            $this->logger->log('error', true, 'PGDA: Invalid date! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($parsedDate, true));
+            $this->container->get('Logger')->log('error', true, 'PGDA: Invalid date! ' . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($parsedDate, true));
             exit;
         }
         return $parsedDate;

@@ -54,9 +54,9 @@ class ThirdPartyService
 
     public $soapManager;
     public $paramManager;
-    public $SKS;
-    public $thirdPartyIntegration;
-    public $serviceUsers;
+    private $SKS;
+    private $thirdPartyIntegration;
+    private $serviceUsers;
     private $sessionManager;
     private $core;
     private $NetentProvider;

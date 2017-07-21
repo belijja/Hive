@@ -9,7 +9,7 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 use Models\ServiceModels\IServiceModels;
 
 /**
@@ -18,6 +18,8 @@ use Models\ServiceModels\IServiceModels;
  */
 class SoapManager
 {
+
+    use ServiceContainer;
 
     /**
      * @param IServiceModels $modelObject
@@ -63,7 +65,7 @@ class SoapManager
     public function namespaceToWsdlFilename(string $namespace): string
     {
         $url = parse_url($namespace);
-        $fileName = ConfigManager::getWsdl('wsdlCacheDir') . $url['host'] . str_replace([
+        $fileName = $this->container->get('Config')->getWsdl('wsdlCacheDir') . $url['host'] . str_replace([
                 '/',
                 '.php'
             ], [

@@ -19,13 +19,6 @@ class ServiceUser
 {
     use ServiceContainer;
 
-    private $db;
-
-    public function __construct()
-    {
-        $this->db = $this->container->get('Db');
-    }
-
     /**
      * @param array $params
      * @return array
@@ -34,7 +27,7 @@ class ServiceUser
     public function getUserData(array $params): array
     {
         list($providerId, $skinId, $userId) = $params;
-        $query = $this->db->getDb(true)->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
+        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
                                                           GREATEST(f.level, f.retained_level) AS level, 
                                                           f.amount AS fpp_amount, 
                                                           r.amount AS r_amount, 
@@ -53,8 +46,7 @@ class ServiceUser
                 ':providerId' => $providerId,
                 ':skinId'     => $skinId,
                 ':userId'     => $userId
-            ]) || $query->rowCount() != 1
-        ) {
+            ]) || $query->rowCount() != 1) {
             throw new \SoapFault('-3', 'Query failed.');
         } else {
             $returnData = $query->fetch(\PDO::FETCH_ASSOC);
@@ -73,15 +65,14 @@ class ServiceUser
     public function getPokerSkinId(int $providerId, int $skinId): array
     {
         $returnData = [];
-        $query = $this->db->getDb(true)->prepare("SELECT poker_skinid 
+        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_skinid 
                                                           FROM provider_skin_mapping 
                                                           WHERE provider_id = :providerId 
                                                           AND provider_skinid = :skinId");
         if (!$query->execute([
                 ':providerId' => $providerId,
                 'skinId'      => $skinId
-            ]) || $query->rowCount() != 1
-        ) {
+            ]) || $query->rowCount() != 1) {
             $returnData['status'] = false;
         } else {
             $returnData = $query->fetch(\PDO::FETCH_ASSOC);

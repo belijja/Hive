@@ -47,8 +47,7 @@ class Bonus
         $query = $this->container->get('Db')->getDb(false)->prepare("SELECT c.threshold_amount FROM campaigns c WHERE id = :campaignId");
         if ($query->execute([
                 ':campaignId' => $campaignId
-            ]) && $query->rowCount() > 0
-        ) {
+            ]) && $query->rowCount() > 0) {
             $campaign = $query->fetch(\PDO::FETCH_ASSOC);
         } else {
             $this->container->get('Logger')->log('error', true, "Query failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);

@@ -9,8 +9,6 @@ declare(strict_types = 1);
 
 namespace Partners;
 
-use Configs\SKSConfigs;
-use Configs\CurrencyConfigs;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\SKSSoapClient;
 use Containers\ServiceContainer;
@@ -25,9 +23,6 @@ class SKSPartner implements IPartner
 
     private $soapClient;
     private $serverManager;
-    private $db;
-    private $logger;
-    private $configManager;
 
     /**
      * SKSPartner constructor.
@@ -38,9 +33,6 @@ class SKSPartner implements IPartner
     {
         $this->soapClient = $soapClient;
         $this->serverManager = $serverManager;
-        $this->db = $this->container->get('Db');
-        $this->logger = $this->container->get('Logger');
-        $this->configManager = $this->container->get('Config');
     }
 
     /**
@@ -54,7 +46,7 @@ class SKSPartner implements IPartner
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
         $userDetails = null;//initializing variable for fetching user from db
-        $query = $this->db->getDb(true)->prepare("SELECT c.extern_username, 
+        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT c.extern_username, 
                                              datediff(now(), ud.updatetime) AS updatediff, 
                                              (ud.logintime <= ud.acttime) AS isFirst, u.* 
                                              FROM users u 
@@ -67,15 +59,14 @@ class SKSPartner implements IPartner
             ':SKSProviderId' => $partnerId,
             ':userId'        => $userId,
             ':skinId'        => $skinId
-        ])
-        ) {//if query fail
+        ])) {//if query fail
             throw new \SoapFault('-3', 'Query failed.');
         }
         if ($query->rowCount() > 0) {
             $userDetails = $query->fetch(\PDO::FETCH_OBJ);
         }
         if ($query->rowCount() == 0 || $userDetails->updatediff > 14 || $userDetails->isFirst) {
-            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $this->logger, $soapClient);
+            $SKSUserInfo = $this->soapClient->getUserInfo($userId, $skinId, $soapClient);
             /*if (is_soap_fault($SKSUserInfo) || $SKSUserInfo->GetUserInfoResult->_UserID != $userId) {
                 throw new \SoapFault('-3', 'Error connecting to SKS endpoint.');
             }*///delete comments on prod
@@ -92,20 +83,20 @@ class SKSPartner implements IPartner
             $params['email'] = $user->Email;
             $params['firstName'] = $user->Firstname;
             $params['lastName'] = $user->Lastname;
-            if (isset($user->RegionResidenceCode) && SKSConfigs::getPGDARegionCodes($user->RegionResidenceCode) != null) {
-                $params['state'] = SKSConfigs::getPGDARegionCodes($user->RegionResidenceCode);
-            } else if (isset($user->ProvinceResidenceCode) && SKSConfigs::getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
-                $params['state'] = SKSConfigs::getPGDAProvinceCodes($user->ProvinceResidenceCode);
+            if (isset($user->RegionResidenceCode) && $this->container->get('SKSConfig')->getPGDARegionCodes($user->RegionResidenceCode) != null) {
+                $params['state'] = $this->container->get('SKSConfig')->getPGDARegionCodes($user->RegionResidenceCode);
+            } else if (isset($user->ProvinceResidenceCode) && $this->container->get('SKSConfig')->getPGDAProvinceCodes($user->ProvinceResidenceCode) != null) {
+                $params['state'] = $this->container->get('SKSConfig')->getPGDAProvinceCodes($user->ProvinceResidenceCode);
             } else {
                 $params['state'] = 99;
             }
             $params['city'] = $user->City;
             $params['street'] = $user->Address;
-            $params['country'] = SKSConfigs::getCountryCodes($user->Country)['code'];
+            $params['country'] = $this->container->get('SKSConfig')->getCountryCodes($user->Country)['code'];
             $params['zip'] = $user->Zip;
             $params['dateOfBirth'] = substr($user->Birthdate, 0, 10);
             $params['phone'] = $user->Phone;
-            $params['currencyCode'] = SKSConfigs::getCurrencyCodes((string)$user->Currency)['code'];
+            $params['currencyCode'] = $this->container->get('SKSConfig')->getCurrencyCodes((string)$user->Currency)['code'];
             $params['externalUsername'] = $user->Username;
             if ($query->rowCount() == 0) {
                 $params['active'] = 1;
@@ -116,9 +107,9 @@ class SKSPartner implements IPartner
             } else {
                 $params['username'] = $userDetails->username;
                 $params['isFirstLogin'] = $userDetails->isFirst ? 1 : 0;
-                $currencyId = CurrencyConfigs::getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
-                if (CurrencyConfigs::getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
-                    $this->logger->log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
+                $currencyId = $this->container->get('CurrencyConfig')->getCurrencyIds($params['currencyCode']);//making variable shorter for using in log method
+                if ($this->container->get('CurrencyConfig')->getCurrencyIds($params['currencyCode']) != $userDetails->curid) {
+                    $this->container->get('Logger')->log('error', true, 'Currency code has changed from ' . $userDetails->curid . ' to ' . $currencyId . ' PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
                     throw new \SoapFault('-3', 'Currency code has changed.');
                 }
                 if ($params['username'] == $userDetails->username && $params['email'] == $userDetails->email && $params['firstName'] == $userDetails->firstname && $params['lastName'] == $userDetails->lastname && $params['city'] == $userDetails->city && $params['street'] == $userDetails->street && $params['state'] == $userDetails->state && $params['zip'] == $userDetails->zip && $params['dateOfBirth'] == $userDetails->dob && $params['phone'] == $userDetails->phone && $params['country'] == $userDetails->country && $params['externalUsername'] == $userDetails->extern_username && !$userDetails['isFirst']) {
@@ -139,22 +130,21 @@ class SKSPartner implements IPartner
      */
     private function checkAndAddAffiliate(int $skinId, int $fatherId, \SoapClient $soapClient = null): void
     {
-        $query = $this->db->getDb(true)->prepare("SELECT poker_affilid 
+        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_affilid 
                                              FROM provider_affil_mapping 
                                              WHERE provider_affilid = :fatherId 
                                              AND provider_id = :SKSProviderId");
         if (!$query->execute([
                 ':fatherId'      => $fatherId,
-                ':SKSProviderId' => $this->configManager->getSKS('localPartnerId')
-            ]) || $query->rowCount() == 0
-        ) {
-            $SKSUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $this->logger, $soapClient);
+                ':SKSProviderId' => $this->container->get('Config')->getSKS('localPartnerId')
+            ]) || $query->rowCount() == 0) {
+            $SKSUserInfo = $this->soapClient->getUserInfo($fatherId, $skinId, $soapClient);
             if (is_soap_fault($SKSUserInfo) || $SKSUserInfo->GetUserInfoResult->_UserID != $fatherId || $SKSUserInfo->GetUserInfoResult->_UserInfo->UserType != 20) {
                 return;
             }
             $commit = false;
-            $this->db->beginTransaction();
-            $query = $this->db->getDb(true)->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
+            $this->container->get('Db')->getDb(true)->beginTransaction();
+            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
                                                  VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
             $user = $SKSUserInfo->GetUserInfoResult->_UserInfo;//making variable name shorter
             if ($query->execute([
@@ -163,26 +153,24 @@ class SKSPartner implements IPartner
                     ':phone'    => $user->Phone,
                     ':city'     => $user->City,
                     ':address'  => $user->Address,
-                    ':country'  => SKSConfigs::getCountryCodes($user->Country)['code'],
+                    ':country'  => $this->container->get('SKSConfig')->getCountryCodes($user->Country)['code'],
                     ':zip'      => $user->Zip
-                ]) && $query->rowCount() > 0
-            ) {
-                $pokerAffiliateId = $this->db->lastInsertId();
-                $query = $this->db->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                ]) && $query->rowCount() > 0) {
+                $pokerAffiliateId = $this->container->get('Db')->getDb(true)->lastInsertId();
+                $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
-                    ':providerId'          => $this->configManager->getSKS('localPartnerId'),
+                    ':providerId'          => $this->container->get('Config')->getSKS('localPartnerId'),
                     ':providerAffiliateId' => $fatherId,
                     ':pokerAffiliateId'    => $pokerAffiliateId
-                ])
-                ) {
+                ])) {
                     $commit = true;
                 }
             }
             if ($commit) {
-                $this->db->commit();
+                $this->container->get('Db')->getDb(true)->commit();
             } else {
-                $this->db->rollBack();
+                $this->container->get('Db')->getDb(true)->rollBack();
             }
         }
     }

@@ -15,9 +15,9 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 trait ServiceContainer
 {
-    private $container;
+    public $container;
 
-    private function __construct()
+    public function __construct()
     {
         $this->container = new ContainerBuilder();
         $loader = new YamlFileLoader($this->container, new FileLocator(__DIR__ . '/'));

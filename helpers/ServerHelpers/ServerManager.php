@@ -9,10 +9,12 @@ declare(strict_types = 1);
 
 namespace Helpers\ServerHelpers;
 
-use Helpers\ConfigHelpers\ConfigManager;
+use Containers\ServiceContainer;
 
 class ServerManager
 {
+    use ServiceContainer;
+
     private $postParamsMaxLengths = [
 
         "InsertPokerRegistration" => [
@@ -38,7 +40,7 @@ class ServerManager
     public function callExternalMethod(string $functionName, array $postParams, $url = null): array
     {
         if ($url == null) {
-            $url = "http://" . ConfigManager::getServer('address') . ":" . (ConfigManager::getServer('nePort') != null ? ConfigManager::getServer('nePort') : 8002) . "/";
+            $url = "http://" . $this->container->get('Config')->getServer('address') . ":" . ($this->container->get('Config')->getServer('nePort') != null ? $this->container->get('Config')->getServer('nePort') : 8002) . "/";
         }
         $postParams = $this->checkAndFixPostParams($functionName, $postParams);
         $encoded = http_build_query($postParams) . "&" . urlencode("action") . "=" . urlencode($functionName);

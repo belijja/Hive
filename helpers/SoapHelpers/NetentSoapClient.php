@@ -9,11 +9,12 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\LogHelpers\LogManager;
+use Containers\ServiceContainer;
 
 class NetentSoapClient
 {
+    use ServiceContainer;
+
     /**
      * @param array $user
      * @return string
@@ -25,8 +26,8 @@ class NetentSoapClient
             $soapClient = $this->getSoapClient();
             $userParams = [
                 "userName"         => $user['userid'],
-                "merchantId"       => ConfigManager::getNetent('merchantId'),
-                "merchantPassword" => ConfigManager::getNetent('merchantPassword'),
+                "merchantId"       => $this->container->get('Config')->getNetent('merchantId'),
+                "merchantPassword" => $this->container->get('Config')->getNetent('merchantPassword'),
                 "currencyISOCode"  => $user['currency'],
                 'extra'            => [
                     "DisplayName",
@@ -35,7 +36,7 @@ class NetentSoapClient
             ];
             $loginUserReturn = $soapClient->loginUserDetailed($userParams);
         } catch (\Exception $error) {
-            LogManager::log('error', true, "Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
+            $this->container->get('Logger')->log('error', true, "Netent login failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }
         $returnFromNetent = get_object_vars($loginUserReturn);
@@ -55,12 +56,12 @@ class NetentSoapClient
             $soapClient = $this->getSoapClient();
             $params = [
                 'sessionId' => $netentSessionId,
-                'merchantId'       => ConfigManager::getNetent('merchantId'),
-                'merchantPassword' => ConfigManager::getNetent('merchantPassword')
+                'merchantId'       => $this->container->get('Config')->getNetent('merchantId'),
+                'merchantPassword' => $this->container->get('Config')->getNetent('merchantPassword')
             ];
             $soapClient->logoutUser($params);
         } catch (\Exception $error) {
-            LogManager::log('error', true, "Netent logout failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
+            $this->container->get('Logger')->log('error', true, "Netent logout failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__ . ' VARIABLE: ' . var_export($error, true));
             throw new \SoapFault('CONNECTION_ERROR', 'Error connecting to Netent server!');
         }*/
         return;
@@ -71,9 +72,9 @@ class NetentSoapClient
      */
     public function getSoapClient()
     {
-        return new \SoapClient(ConfigManager::getNetent('apiLocation'), [
+        return new \SoapClient($this->container->get('Config')->getNetent('apiLocation'), [
             'trace'              => 1,
-            'connection_timeout' => ConfigManager::getNetent('apiConnectionTimeout')
+            'connection_timeout' => $this->container->get('Config')->getNetent('apiConnectionTimeout')
         ]);
     }
 }

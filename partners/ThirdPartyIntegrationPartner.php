@@ -9,31 +9,25 @@ declare(strict_types = 1);
 
 namespace Partners;
 
-use Configs\SkinConfigs;
+use Containers\ServiceContainer;
 use Helpers\ServerHelpers\ServerManager;
 use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
-use Helpers\LogHelpers\LogManager;
-use Helpers\ConfigHelpers\Db;
-use Services\AbstractContainer;
 
 /**
  * Class ThirdPartyIntegrationPartner
  * @package Partners
  */
-class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
+class ThirdPartyIntegrationPartner implements IPartner
 {
+    use ServiceContainer;
+
     private $soapClient;
-    private $db;
-    private $logger;
     private $serverManager;
 
     public function __construct(ThirdPartyIntegrationSoapClient $soapClient, ServerManager $serverManager)
     {
-        parent::__construct();
         $this->soapClient = $soapClient;
         $this->serverManager = $serverManager;
-        $this->db = $this->container->get('Db');
-        $this->logger = $this->container->get('Logger');
     }
 
     /**
@@ -46,15 +40,14 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
      */
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
-        $query = $this->db->getDb(true)->prepare("SELECT poker_skinid 
+        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
                                              WHERE provider_id = :providerId 
                                              AND provider_skinid = :providerSkinId");
         if (!$query->execute([
                 ':providerId'     => $partnerId,
                 ':providerSkinId' => $skinId
-            ]) || $query->rowCount() != 1
-        ) {//if query fails or there is no returned rows from db
+            ]) || $query->rowCount() != 1) {//if query fails or there is no returned rows from db
             throw new \SoapFault('-3', 'Query failed.');
         } else {
             $result = $query->fetch(\PDO::FETCH_OBJ);
@@ -77,7 +70,7 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
         $isFirstLogin = 1;
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
-            $query = $this->db->getDb(true)->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
+            $query = $this->container->get('Db')->getDb(true)->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
@@ -86,9 +79,9 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
                                                  AND c.skin_id = :partnerId");
             $result = $query->execute([
                 ':userDate'   => $userDate,
-                ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                ':providerId' => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                 ':userId'     => $userId,
-                ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
+                ':partnerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['partnerId']
             ]);
             if ($result && $query->rowCount() == 1) {
                 $result = $query->fetch(\PDO::FETCH_OBJ);
@@ -100,7 +93,7 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
                 ];
             }
         } else {
-            $query = $this->db->getDb(true)->prepare("SELECT c.user_id, 
+            $query = $this->container->get('Db')->getDb(true)->prepare("SELECT c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst,
                                                  teud.authority_id as authorityId
                                                  FROM casino_ids c 
@@ -110,11 +103,10 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
                                                  AND c.casino_id = :userId 
                                                  AND c.skin_id = :partnerId");
             if (!$query->execute([
-                ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                ':providerId' => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                 ':userId'     => $userId,
-                ':partnerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId']
-            ])
-            ) {
+                ':partnerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['partnerId']
+            ])) {
                 throw new \SoapFault('-3', 'Query failed.');
             }
         }
@@ -127,36 +119,35 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
             ];
         }
         if ($query->rowCount() == 0 || $needUpdate) {
-            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $this->logger, $soapClient);
+            $legacyUserInfo = $this->soapClient->getUserInfo($userId, $pokerSkinId, $soapClient);
             /*if (is_soap_fault($legacyUserInfo) || $legacyUserInfo->UserGetInfoResult->resultCode != 1) {
                 throw new \SoapFault('-3', 'Error connecting to third party user endpoint.');
             }*/
             $user = $legacyUserInfo->UserGetInfoResult;//making variable shorter
             $params = [];
-            $params['providerId'] = SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'];
+            $params['providerId'] = $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'];
             $params['userId'] = $userId;
-            $params['skinId'] = SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId'];
+            $params['skinId'] = $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
-                $query = $this->db->getDb(true)->prepare("SELECT * 
+                $query = $this->container->get('Db')->getDb(true)->prepare("SELECT * 
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
                 $query->execute([
-                    ':providerId' => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                    ':providerId' => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
-                    $query = $this->db->getDb(true)->prepare("INSERT INTO affiliates (name) 
+                    $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO affiliates (name) 
                                                          VALUES (:agentName)");
                     if ($query->execute([
                         ':agentName' => $user->agentName
-                    ])
-                    ) {
-                        $affiliateId = $this->db->lastInsertId();
-                        $query = $this->db->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                    ])) {
+                        $affiliateId = $this->container->get('Db')->getDb(true)->lastInsertId();
+                        $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                              VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
-                            ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                            ':providerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                             ':agentId'     => $user->agentId,
                             ':affiliateId' => $affiliateId
                         ]);
@@ -166,14 +157,13 @@ class ThirdPartyIntegrationPartner extends AbstractContainer implements IPartner
             }
             if (!$needUpdate) {
                 if (!empty($user->authorityId) && is_null($result['authorityId'])) {
-                    $query = $this->db->getDb(true)->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
+                    $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
                     if ($query->execute([
-                        ':providerId'  => SkinConfigs::getSkinConfigs($pokerSkinId)['providerId'],
+                        ':providerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                         ':userId'      => $userId,
-                        ':partnerId'   => SkinConfigs::getSkinConfigs($pokerSkinId)['partnerId'],
+                        ':partnerId'   => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['partnerId'],
                         ':authorityId' => $user->authorityId
-                    ])
-                    ) {
+                    ])) {
                         $params['authorityId'] = $user->authorityId;
                     }
                 }

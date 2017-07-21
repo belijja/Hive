@@ -9,16 +9,16 @@ declare(strict_types = 1);
 
 namespace Pgda\Messages;
 
-use Configs\PgdaConfigs;
+use Containers\ServiceContainer;
 use Pgda\Fields\AbstractField;
 use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 use Pgda\PGDAIntegration;
-use Helpers\ConfigHelpers\ConfigManager;
-use Helpers\LogHelpers\LogManager;
 
 class Message implements \Iterator
 {
+    use ServiceContainer;
+
     private $position = 0;
     private $errorMessage = [
         'write' => [],
@@ -139,9 +139,9 @@ class Message implements \Iterator
         } catch (\Exception $exception) {
             switch ($exception->getCode()) {
                 case -42:// header not found
-                    LogManager::log('pgda', false, "PGDA header not found: " . $exception->getMessage());
+                    $this->container->get('Logger')->log('pgda', false, "PGDA header not found: " . $exception->getMessage());
                     if ($cnt <= 3) {
-                        $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId(PgdaConfigs::getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
+                        $this->setTransactionCode(PGDAIntegration::getPgdaTransactionId($this->container->get('PgdaConfig')->getPgdaPrefix('retry'), (string)(microtime(true) * 10000)));
                         $this->writeHeader();
                         $binaryMessage = $this->getHeader() . $this->getBody();
                         sleep(1);
@@ -149,7 +149,7 @@ class Message implements \Iterator
                     }
                 break;
                 default:// HTTP error
-                    LogManager::log('pgda', false, "PGDA exception, HTTP CODE: " . $exception->getCode());
+                    $this->container->get('Logger')->log('pgda', false, "PGDA exception, HTTP CODE: " . $exception->getCode());
                     if ($cnt <= 3) {
                         sleep(1);
                         $this->sendMessageRecursive($binaryMessage, $serverPathSuffix, $cnt);
@@ -170,7 +170,7 @@ class Message implements \Iterator
     private function sendMessage(string $binaryMessage, string $serverPathSuffix): bool
     {
         $signedData = $this->signData($binaryMessage);
-        $this->url = PgdaConfigs::getPgdaServerCodes('scheme') . "://" . PgdaConfigs::getPgdaServerCodes('address') . ":" . PgdaConfigs::getPgdaServerCodes('port') . PgdaConfigs::getPgdaServerCodes('path') . $serverPathSuffix;
+        $this->url = $this->container->get('PgdaConfig')->getPgdaServerCodes('scheme') . "://" . $this->container->get('PgdaConfig')->getPgdaServerCodes('address') . ":" . $this->container->get('PgdaConfig')->getPgdaServerCodes('port') . $this->container->get('PgdaConfig')->getPgdaServerCodes('path') . $serverPathSuffix;
         $curl = curl_init($this->url);
         $options = [
             CURLOPT_POSTFIELDS     => $signedData,
@@ -211,8 +211,8 @@ class Message implements \Iterator
         $binaryIn = tempnam(sys_get_temp_dir(), uniqid() . '_AAMSmsg_' . md5(microtime()));
         $signedOut = tempnam(sys_get_temp_dir(), uniqid() . '_Signed_AAMSmsg_' . md5(microtime()));
         file_put_contents($binaryIn, $binaryMessage);
-        $stringKey = openssl_pkey_get_private('file://' . PgdaConfigs::getPgdaCertificates('private'), PgdaConfigs::getPgdaCertificates('privatePassword'));
-        openssl_pkcs7_sign($binaryIn, $signedOut, file_get_contents(PgdaConfigs::getPgdaCertificates('private')), $stringKey, [], PKCS7_BINARY | PKCS7_NOINTERN | PKCS7_NOCERTS);
+        $stringKey = openssl_pkey_get_private('file://' . $this->container->get('PgdaConfig')->getPgdaCertificates('private'), $this->container->get('PgdaConfig')->getPgdaCertificates('privatePassword'));
+        openssl_pkcs7_sign($binaryIn, $signedOut, file_get_contents($this->container->get('PgdaConfig')->getPgdaCertificates('private')), $stringKey, [], PKCS7_BINARY | PKCS7_NOINTERN | PKCS7_NOCERTS);
         $returnString = file_get_contents($signedOut);
         //Remove all mime headers from signed message
         $arrayMsg = explode("\n", $returnString);
@@ -259,12 +259,12 @@ class Message implements \Iterator
                 throw new \LogicException ("Can not write header packet while aamsGioco is not defined Error in " . __METHOD__ . " on line: " . __LINE__);
             }
         }
-        LogManager::log('pgda', false, "AAMS_CONC: " . PgdaConfigs::getPgdaAamsCodes('conc') . " AAMS_FSC: " . PgdaConfigs::getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
+        $this->container->get('Logger')->log('pgda', false, "AAMS_CONC: " . $this->container->get('PgdaConfig')->getPgdaAamsCodes('conc') . " AAMS_FSC: " . $this->container->get('PgdaConfig')->getPgdaAamsCodes('fsc') . " AAMS_GIOCO: " . $this->aamsGioco . " TRANSACTION_ID: " . $this->transactionCode . " MSG_TYPE: " . $this->messageId);
         $messageHeader = new Message();
         $messageHeader->attach(PField::set("Num. vers. Protoc.", PField::byte, 2));
-        $messageHeader->attach(PField::set("Cod. Forn. Servizi", PField::int, PgdaConfigs::getPgdaAamsCodes('fsc')));
-        $messageHeader->attach(PField::set("Cod. Conc. Trasm.", PField::int, PgdaConfigs::getPgdaAamsCodes('conc')));
-        $messageHeader->attach(PField::set("Cod. Conc. Propo.", PField::int, PgdaConfigs::getPgdaAamsCodes('conc')));
+        $messageHeader->attach(PField::set("Cod. Forn. Servizi", PField::int, $this->container->get('PgdaConfig')->getPgdaAamsCodes('fsc')));
+        $messageHeader->attach(PField::set("Cod. Conc. Trasm.", PField::int, $this->container->get('PgdaConfig')->getPgdaAamsCodes('conc')));
+        $messageHeader->attach(PField::set("Cod. Conc. Propo.", PField::int, $this->container->get('PgdaConfig')->getPgdaAamsCodes('conc')));
         $messageHeader->attach(PField::set("Codice Gioco.", PField::int, $this->aamsGioco));
         $messageHeader->attach(PField::set("Cod. Tipo Gioco.", PField::byte, $this->aamsGiocoId));
         $messageHeader->attach(PField::set("Tipo Mess.", PField::string, $this->messageId, 4));
@@ -426,10 +426,10 @@ class Message implements \Iterator
      */
     private function getHeaderLength(): int
     {
-        if (ConfigManager::getPgda('headerLength') == null) {
+        if ($this->container->get('Config')->gda('headerLength') == null) {
             throw new \UnexpectedValueException('Can not use a message with header length not set.');
         }
-        return (int)ConfigManager::getPgda('headerLength');
+        return (int)$this->container->get('Config')->gda('headerLength');
     }
 
     /**

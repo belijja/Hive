@@ -9,21 +9,19 @@ declare(strict_types = 1);
 
 namespace Helpers\SoapHelpers;
 
-use Helpers\LogHelpers\LogManager;
-use Services\Container;
+use Containers\ServiceContainer;
 
 class SKSSoapClient implements ISoapClient
 {
-    use Container;
+    use ServiceContainer;
 
     /**
      * @param int $userId
      * @param int $skinId
-     * @param LogManager $logger
      * @param \SoapClient|null $soapClient
      * @return \stdClass
      */
-    public function getUserInfo(int $userId, int $skinId, LogManager $logger, \SoapClient $soapClient = null): /*array*/
+    public function getUserInfo(int $userId, int $skinId, \SoapClient $soapClient = null): /*array*/
     \stdClass
     {
         $response = new \stdClass();
@@ -82,21 +80,21 @@ class SKSSoapClient implements ISoapClient
 
     private function getSKSSoapClient(string $service = 'Users'): \SoapClient
     {
-        return new \SoapClient(ConfigManager::getSKS('apiUri') . "/" . $service . ".svc?wsdl", [
+        return new \SoapClient($this->container->get('Config')->getSKS('apiUri') . "/" . $service . ".svc?wsdl", [
             'trace'              => 1,
             'exceptions'         => 0,
             'features'           => SOAP_SINGLE_ELEMENT_ARRAYS,
-            'connection_timeout' => ConfigManager::getSKS('apiConnectionTimeout')
+            'connection_timeout' => $this->container->get('Config')->getSKS('apiConnectionTimeout')
         ]);
     }
 
     private function initSKSParams(int $skinId, string $apiAccount = null, string $apiPass = null): array
     {
         if (!isset($apiAccount)) {
-            $apiAccount = ConfigManager::getSKS('apiAccount');
+            $apiAccount = $this->container->get('Config')->getSKS('apiAccount');
         }
         if (!isset($apiPass)) {
-            $apiPass = ConfigManager::getSKS('apiPassword');
+            $apiPass = $this->container->get('Config')->getSKS('apiPassword');
         }
         $params = [
             '_APIAccount'  => $apiAccount,

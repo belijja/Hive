@@ -79,7 +79,8 @@ class NetentProvider
     private function createSession(array $thirdPartyServiceUser, array $gameData, int $amountInCents, string $ip = null, int $platform = null, int $campaignId = null, string $netentSessionId = null): array
     {
         $returnValue = [];
-        $user = UserFactory::getUser($thirdPartyServiceUser, $gameData['provider_id']);
+        $userFactory = new UserFactory();
+        $user = $userFactory->getUser($thirdPartyServiceUser, $gameData['provider_id']);
         /*if (isset($netentSessionId)) {
             $isCashierTokenSet = $user->getCashierTokenFromSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId']);//if there is cashier token already logout and login to netent again to obtain new cashier token because there can't be two same cashier tokens
             if ($isCashierTokenSet) {
@@ -114,8 +115,7 @@ class NetentProvider
             $queryTwo = $this->container->get('Db')->getDb(true)->prepare($qTwo);
             if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([
                     ':sessionId' => $user->sessionId
-                ])
-            ) {
+                ])) {
                 $this->container->get('Db')->getDb(true)->commit();
             }
         } catch (\SoapFault $soapFault) {
@@ -177,8 +177,7 @@ class NetentProvider
                     ':ip'          => $ip,
                     ':platform'    => $platform
                 ]) || $query->rowCount() < 1*/
-                1 == 2
-            ) {
+                1 == 2) {
                 $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
                 throw new \SoapFault('0', 'Unspecified error.');
             }
@@ -191,8 +190,7 @@ class NetentProvider
                     ':ip'         => $ip,
                     ':platform'   => $platform,
                     ':campaignId' => $campaignId
-                ]) || $query->rowCount() < 1
-            ) {
+                ]) || $query->rowCount() < 1) {
                 $user->logSession(__FUNCTION__ . ": insert into tp_ext_sessions failed!");
                 throw new \SoapFault('0', 'Unspecified error.');
             }
