@@ -17,9 +17,9 @@ use Containers\ServiceContainer;
  * Class SKSPartners
  * @package Partners
  */
-class SKSPartner implements IPartner
+class SKSPartner extends ServiceContainer implements IPartner
 {
-    use ServiceContainer;
+
 
     private $soapClient;
     private $serverManager;
@@ -31,6 +31,7 @@ class SKSPartner implements IPartner
      */
     public function __construct(SKSSoapClient $soapClient, ServerManager $serverManager)
     {
+        parent::__construct();
         $this->soapClient = $soapClient;
         $this->serverManager = $serverManager;
     }
@@ -46,7 +47,7 @@ class SKSPartner implements IPartner
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
         $userDetails = null;//initializing variable for fetching user from db
-        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT c.extern_username, 
+        $query = $this->container->get('Db1')->prepare("SELECT c.extern_username, 
                                              datediff(now(), ud.updatetime) AS updatediff, 
                                              (ud.logintime <= ud.acttime) AS isFirst, u.* 
                                              FROM users u 
@@ -130,7 +131,7 @@ class SKSPartner implements IPartner
      */
     private function checkAndAddAffiliate(int $skinId, int $fatherId, \SoapClient $soapClient = null): void
     {
-        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_affilid 
+        $query = $this->container->get('Db1')->prepare("SELECT poker_affilid 
                                              FROM provider_affil_mapping 
                                              WHERE provider_affilid = :fatherId 
                                              AND provider_id = :SKSProviderId");
@@ -143,8 +144,8 @@ class SKSPartner implements IPartner
                 return;
             }
             $commit = false;
-            $this->container->get('Db')->getDb(true)->beginTransaction();
-            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
+            $this->container->get('Db1')->beginTransaction();
+            $query = $this->container->get('Db1')->prepare("INSERT INTO affiliates (name, email, phone, city, street, country, zip, state) 
                                                  VALUES (:username, :email, :phone, :city, :address, :country, :zip, 1)");
             $user = $SKSUserInfo->GetUserInfoResult->_UserInfo;//making variable name shorter
             if ($query->execute([
@@ -156,8 +157,8 @@ class SKSPartner implements IPartner
                     ':country'  => $this->container->get('SKSConfig')->getCountryCodes($user->Country)['code'],
                     ':zip'      => $user->Zip
                 ]) && $query->rowCount() > 0) {
-                $pokerAffiliateId = $this->container->get('Db')->getDb(true)->lastInsertId();
-                $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                $pokerAffiliateId = $this->container->get('Db1')->lastInsertId();
+                $query = $this->container->get('Db1')->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                      VALUES (:providerId, :providerAffiliateId, :pokerAffiliateId)");
                 if ($query->execute([
                     ':providerId'          => $this->container->get('Config')->getSKS('localPartnerId'),
@@ -168,9 +169,9 @@ class SKSPartner implements IPartner
                 }
             }
             if ($commit) {
-                $this->container->get('Db')->getDb(true)->commit();
+                $this->container->get('Db1')->commit();
             } else {
-                $this->container->get('Db')->getDb(true)->rollBack();
+                $this->container->get('Db1')->rollBack();
             }
         }
     }

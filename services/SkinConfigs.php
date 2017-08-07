@@ -15,9 +15,9 @@ use Containers\ServiceContainer;
  * Class SkinConfigs
  * @package Configs
  */
-class SkinConfigs
+class SkinConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $skinConfigs = [
         0        => [

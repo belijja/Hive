@@ -11,9 +11,9 @@ namespace Services;
 
 use Containers\ServiceContainer;
 
-class CurrencyConfigs
+class CurrencyConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private const  MONEY_SYMBOL = "&euro;";
     private const  CURRENCY_ID_ACCOUNT = 0;

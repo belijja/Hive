@@ -11,9 +11,9 @@ namespace Helpers\SoapHelpers;
 
 use Containers\ServiceContainer;
 
-class SKSSoapClient implements ISoapClient
+class SKSSoapClient extends ServiceContainer implements ISoapClient
 {
-    use ServiceContainer;
+
 
     /**
      * @param int $userId

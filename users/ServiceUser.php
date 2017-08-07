@@ -15,9 +15,13 @@ use Containers\ServiceContainer;
  * Class ServiceUser
  * @package Users
  */
-class ServiceUser
+class ServiceUser extends ServiceContainer
 {
-    use ServiceContainer;
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
 
     /**
      * @param array $params
@@ -27,7 +31,7 @@ class ServiceUser
     public function getUserData(array $params): array
     {
         list($providerId, $skinId, $userId) = $params;
-        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
+        $query = $this->container->get('Db1')->prepare("SELECT u.userid, u.username, u.skinid, u.firstname, u.lastname, u.email, u.state, 
                                                           GREATEST(f.level, f.retained_level) AS level, 
                                                           f.amount AS fpp_amount, 
                                                           r.amount AS r_amount, 
@@ -65,7 +69,7 @@ class ServiceUser
     public function getPokerSkinId(int $providerId, int $skinId): array
     {
         $returnData = [];
-        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_skinid 
+        $query = $this->container->get('Db1')->prepare("SELECT poker_skinid 
                                                           FROM provider_skin_mapping 
                                                           WHERE provider_id = :providerId 
                                                           AND provider_skinid = :skinId");

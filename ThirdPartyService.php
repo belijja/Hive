@@ -48,9 +48,8 @@ use Containers\ServiceContainer;
 /**
  * Class ThirdPartyService
  */
-class ThirdPartyService
+class ThirdPartyService extends ServiceContainer
 {
-    use ServiceContainer;
 
     public $soapManager;
     public $paramManager;
@@ -74,6 +73,7 @@ class ThirdPartyService
      */
     public function __construct(SoapManager $soapManager, ParamManager $paramManager, IPartner $SKS, IPartner $thirdPartyIntegration, ServiceUser $serviceUsers, SessionManager $sessionManager, Core $core, NetentProvider $NetentProvider)
     {
+        parent::__construct();
         $this->soapManager = $soapManager;
         $this->paramManager = $paramManager;
         $this->SKS = $SKS;
@@ -216,7 +216,7 @@ if (isset($_GET['wsdl'])) {//if there is wsdl as url param just show it in brows
     $thirdPartyService = new ThirdPartyService(new SoapManager(), new ParamManager(), new SKSPartner(new SKSSoapClient(), new ServerManager()), new ThirdPartyIntegrationPartner(new ThirdPartyIntegrationSoapClient(), new ServerManager()), new ServiceUser(), new SessionManager(), new Core(), new NetentProvider(new NetentSoapClient(), new Bonus(), new PGDAIntegration(new PgdaModels())));
     $user = isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : null;
     $pass = isset($_SERVER['PHP_AUTH_PW']) ? $_SERVER['PHP_AUTH_PW'] : null;
-    if (!isset($user) || !isset($pass) || $this->container->get('PartnerConfig')->getPartnerConfigs($user) == null || $this->container->get('PartnerConfig')->getPartnerConfigs($user)['password'] != $pass) {//basic auth check
+    if (!isset($user) || !isset($pass) || $thirdPartyService->container->get('PartnerConfig')->getPartnerConfigs($user) == null || $thirdPartyService->container->get('PartnerConfig')->getPartnerConfigs($user)['password'] != $pass) {//basic auth check
         header('WWW-Authenticate: Basic realm="ThirdPartyService"');
         header('HTTP/1.0 401 Unauthorized');
         echo 'Unauthorized';

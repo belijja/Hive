@@ -13,9 +13,9 @@ use Containers\ServiceContainer;
 use Models\PgdaModels;
 use Pgda\Messages\Message400;
 
-class PGDAIntegration
+class PGDAIntegration extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     public $pgdaModels;
 
@@ -25,11 +25,8 @@ class PGDAIntegration
      */
     public function __construct(PgdaModels $pgdaModels)
     {
+        parent::__construct();
         $this->pgdaModels = $pgdaModels;
-    }
-
-    private function setPgdaConfigs()
-    {
         $this->pgdaModels->prefixCasinoCreateTest = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('createTest');
         $this->pgdaModels->prefixCasinoCreate = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('create');
         $this->pgdaModels->prefixCasinoTransaction = $this->container->get('PgdaConfig')->getPgdaCasinoCodes('transaction');
@@ -45,9 +42,6 @@ class PGDAIntegration
         $this->pgdaModels->serverPathSuffix780 = $this->container->get('PgdaConfig')->getPgdaServerCodes('780Path');
     }
 
-
-
-
     /**
      * @param int $aamsGameCode
      * @param int $aamsGameType
@@ -61,7 +55,6 @@ class PGDAIntegration
     //start of session message 400
     public function casinoCreate(int $aamsGameCode, int $aamsGameType, string $sessionId, string $datetime, bool $isFun = null, bool $gameTesting = null): array
     {
-        $this->setPgdaConfigs();
         $parsedDate = $this->getPgdaDateAsArray($datetime);
         $endDate = $this->getPgdaEndDateAsArray($datetime);
         if ($gameTesting) {

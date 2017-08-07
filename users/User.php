@@ -12,9 +12,9 @@ namespace Users;
 use BackOffice\Bonus;
 use Containers\ServiceContainer;
 
-class User
+class User extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     public $user;
     protected $config;
@@ -40,6 +40,7 @@ class User
      */
     public function __construct(array $user, array $config, Bonus $bonus)
     {
+        parent::__construct();
         $this->user = $user;
         $this->config = $config;
         $this->bonus = $bonus;
@@ -67,7 +68,7 @@ class User
             $q .= " AND ts.game_id = :gameId";
         }
         $q .= " ORDER BY ts.seq DESC LIMIT 1";
-        $query = $this->container->get('Db')->getDb(true)->prepare($q);
+        $query = $this->container->get('Db1')->prepare($q);
         $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
         $query->bindParam(':netentSessionId', $netentSessionId, \PDO::PARAM_STR);
         $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
@@ -185,7 +186,7 @@ class User
         }
         $q = "INSERT INTO thirdparty_sessions (session_id, status, uid, thirdparty_provider_id, game_id, seq, thirdparty_session_id, cashiertoken, nrhands, amount, bet, rake, sessionstart, sessionend) 
               VALUES (:sessionId, :status, :userId, :thirdPartyProviderId, :gameId, :sequence, :thirdPartySessionId, :cashierToken, :numberOfHands, :amount, :bet, :rake, FROM_UNIXTIME(:sessionStart), FROM_UNIXTIME(:sessionEnd))";
-        $query = $this->container->get('Db')->getDb(true)->prepare($q);
+        $query = $this->container->get('Db1')->prepare($q);
         if (!$query->execute([
                 ':sessionId'            => $sessionId,
                 ':status'               => $status,
@@ -208,7 +209,7 @@ class User
                   AND thirdparty_provider_id = :providerId 
                   AND seq = :sequence
                   AND thirdparty_session_id = :sessionId" . ($sequence == 1 ? " AND nrhands = :numberOfHands AND bet = :bet AND rake = :rake" : "");
-            $query = $this->container->get('Db')->getDb(true)->prepare($q);
+            $query = $this->container->get('Db1')->prepare($q);
             $query->bindParam(':userId', $this->user['userid'], \PDO::PARAM_INT);
             $query->bindParam(':providerId', $this->config['providerId'], \PDO::PARAM_INT);
             $query->bindParam(':sequence', $sequence, \PDO::PARAM_INT);
@@ -226,7 +227,7 @@ class User
                     $newCashierToken = $this->updateThirdPartySession($newCashierToken, $numberOfHands, $amount, $bet, $rake);
                 }
             } else {
-                $this->sessionId = $this->container->get('Db')->getDb(true)->lastInsertId();
+                $this->sessionId = $this->container->get('Db1')->lastInsertId();
                 $newCashierToken = $cashierToken;
             }
         }
@@ -257,7 +258,7 @@ class User
               AND thirdparty_provider_id = :providerId 
               AND cashiertoken = :cashierToken
               AND DATE(sessionend) = CURDATE() AND status < 20";
-        $query = $this->container->get('Db')->getDb(true)->prepare($q);
+        $query = $this->container->get('Db1')->prepare($q);
         if (!$query->execute([
                 ':numberOfHands' => $numberOfHands,
                 ':amount'        => $amount,
@@ -272,7 +273,7 @@ class User
                   WHERE uid = :userId 
                   AND thirdparty_provider_id = :providerId 
                   AND cashiertoken = :cashierToken";
-            $query = $this->container->get('Db')->getDb(true)->prepare($q);
+            $query = $this->container->get('Db1')->prepare($q);
             if ($query->execute([
                     ':userId'       => $this->user['userid'],
                     ':providerId'   => $this->config['providerId'],
@@ -306,7 +307,7 @@ class User
         if ($forUpdate) {
             $q .= " FOR UPDATE";
         }
-        $query = $this->container->get('Db')->getDb(true)->prepare($q);
+        $query = $this->container->get('Db1')->prepare($q);
         if ($query->execute([
                 ':userId' => $this->user['userid']
             ]) && $query->rowCount() > 0) {
@@ -337,7 +338,7 @@ class User
                     return;
                 }
                 if (isset($details['campaignId'])) {
-                    $query = $this->container->get('Db')->getDb(true)->prepare("SELECT real_campaign_id FROM tp_campaigns WHERE seq = :seq");
+                    $query = $this->container->get('Db1')->prepare("SELECT real_campaign_id FROM tp_campaigns WHERE seq = :seq");
                     if ($query->execute([
                             ':seq' => $details['campaignId']
                         ]) && $query->rowCount() > 0) {
@@ -375,7 +376,7 @@ class User
                 }
                 $datesString = implode("' OR date='", $dates);
                 $q = "SELECT SUM(slot_wager) FROM userstats WHERE uid = :userId AND (date = '$datesString')";
-                $query = $this->container->get('Db')->getDb(true)->prepare($q);
+                $query = $this->container->get('Db1')->prepare($q);
                 if ($query->execute([
                         ':userId' => $this->user['userid']
                     ]) && $query->rowCount() > 0) {

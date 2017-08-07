@@ -1,6 +1,28 @@
+parameters:
+  pdo.class: PDO
+
+  database.db1.dsn: mysql:host=localhost;dbname=poker_qai_it;charset=utf8
+  database.db1.username: root
+  database.db1.password: 19051984
+
+  database.db2.dsn: mysql:host=localhost;dbname=gameservice_it;charset=utf8
+  database.db2.username: root
+  database.db2.password: 19051984
+
 services:
-    Db:
-        class:  Services\Db
+    Db1:
+        class:  %pdo.class%
+        arguments:
+              - %database.db1.dsn%
+              - %database.db1.username%
+              - %database.db1.password%
+
+    Db2:
+        class:  %pdo.class%
+        arguments:
+              - %database.db2.dsn%
+              - %database.db2.username%
+              - %database.db2.password%
 
     Logger:
         class:  Services\LogManager

@@ -11,9 +11,9 @@ namespace Services;
 
 use Containers\ServiceContainer;
 
-class PgdaConfigs
+class PgdaConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $pgdaPrefixCasinoCodesPrimary = [
         'create'         => 40002,

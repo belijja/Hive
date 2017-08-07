@@ -11,17 +11,15 @@ namespace BackOffice;
 
 use Containers\ServiceContainer;
 
-class Bonus
+class Bonus extends ServiceContainer
 {
-    use ServiceContainer;
-
     /**
      * @return array
      */
     public function getWagerCampaignDetails(): array
     {
         $wageredCampaign = [];
-        $query = $this->container->get('Db')->getDb(false)->prepare("SELECT c.id, c.bonus_amount, c.wagering_multiplier, DATE_ADD(NOW(), interval + wagering_days day) as wagering_expiry_days, c.wagering_milestone, c.wagering_weekdays, c.bonus_max_amount
+        $query = $this->container->get('Db2')->prepare("SELECT c.id, c.bonus_amount, c.wagering_multiplier, DATE_ADD(NOW(), interval + wagering_days day) as wagering_expiry_days, c.wagering_milestone, c.wagering_weekdays, c.bonus_max_amount
                 FROM campaigns c 
                 WHERE c.start_date <= NOW() 
                 AND c.end_date >= NOW() 
@@ -44,7 +42,7 @@ class Bonus
     public function getCampaignMaxWin($campaignId): int
     {
         $campaign['threshold_amount'] = 0;
-        $query = $this->container->get('Db')->getDb(false)->prepare("SELECT c.threshold_amount FROM campaigns c WHERE id = :campaignId");
+        $query = $this->container->get('Db2')->prepare("SELECT c.threshold_amount FROM campaigns c WHERE id = :campaignId");
         if ($query->execute([
                 ':campaignId' => $campaignId
             ]) && $query->rowCount() > 0) {

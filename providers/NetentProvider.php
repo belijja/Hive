@@ -15,9 +15,9 @@ use Users\UserFactory;
 use Pgda\PGDAIntegration;
 use Containers\ServiceContainer;
 
-class NetentProvider
+class NetentProvider extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $netentSoapClient;
     private $bonus;
@@ -31,6 +31,7 @@ class NetentProvider
      */
     public function __construct(NetentSoapClient $netentSoapClient, Bonus $bonus, PGDAIntegration $pgda)
     {
+        parent::__construct();
         $this->netentSoapClient = $netentSoapClient;
         $this->bonus = $bonus;
         $this->pgda = $pgda;
@@ -106,20 +107,20 @@ class NetentProvider
             $aamsGameType = '';
         }
         $date = time();
-        $this->container->get('Db')->getDb(true)->beginTransaction();
+        $this->container->get('Db1')->beginTransaction();
         try {
             $cashierToken = $user->getGameSession($netentSessionId, $thirdPartyServiceUser['sessionData']['gameId'], $date);
             $qOne = "UPDATE thirdparty_sessions SET session_id = :sessionId WHERE id = :sessionId";
             $qTwo = "INSERT INTO tp_open_sessions (session_id, last_ping) VALUES (:sessionId, NOW())";
-            $queryOne = $this->container->get('Db')->getDb(true)->prepare($qOne);
-            $queryTwo = $this->container->get('Db')->getDb(true)->prepare($qTwo);
+            $queryOne = $this->container->get('Db1')->prepare($qOne);
+            $queryTwo = $this->container->get('Db1')->prepare($qTwo);
             if ($queryOne->execute([':sessionId' => $user->sessionId]) && $queryTwo->execute([
                     ':sessionId' => $user->sessionId
                 ])) {
-                $this->container->get('Db')->getDb(true)->commit();
+                $this->container->get('Db1')->commit();
             }
         } catch (\SoapFault $soapFault) {
-            $this->container->get('Db')->getDb(true)->rollBack();
+            $this->container->get('Db1')->rollBack();
             $this->container->get('Logger')->log('error', true, "Updating and inserting of netend session ID failed! " . 'PATH: ' . __FILE__ . ' LINE: ' . __LINE__ . ' METHOD: ' . __METHOD__);
             throw new \SoapFault('0', 'Unspecified error.');
         }
@@ -168,7 +169,7 @@ class NetentProvider
                 $realAmount = $amountInCents;
             }
             $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", realAmount = " . $realAmount . ", bonus = " . $bonus . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
-            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
+            $query = $this->container->get('Db1')->prepare("INSERT INTO tp_ext_sessions (id, uid, state, amount, bonus_amount, ip, platform) VALUES (:id, :userId, 0, :amount, :bonusAmount, :ip, :platform)");
             if (/*!$query->execute([
                     ':id'          => $user->sessionId,
                     ':userId'      => $user->user['userid'],
@@ -183,7 +184,7 @@ class NetentProvider
             }
         } else {
             $user->logSession(__FUNCTION__ . ": start: userId = " . $user->user['userid'] . ", campaignId = " . $campaignId . ", gameId = " . $user->user['sessionData']['gameId'] . ", aamsGameCode = " . $aamsGameCode . ", aamsGameType = " . $aamsGameType . ", ip = " . $ip . ", platform = " . $platform);
-            $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_sessions (id, uid, state, ip, platform, campaign_id) VALUES (:id, :userId, 0, :ip, :platform, :campaignId)");
+            $query = $this->container->get('Db1')->prepare("INSERT INTO tp_ext_sessions (id, uid, state, ip, platform, campaign_id) VALUES (:id, :userId, 0, :ip, :platform, :campaignId)");
             if (!$query->execute([
                     ':id'         => $user->sessionId,
                     ':userId'     => $user->user['userid'],

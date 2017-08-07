@@ -17,15 +17,16 @@ use Helpers\SoapHelpers\ThirdPartyIntegrationSoapClient;
  * Class ThirdPartyIntegrationPartner
  * @package Partners
  */
-class ThirdPartyIntegrationPartner implements IPartner
+class ThirdPartyIntegrationPartner extends ServiceContainer implements IPartner
 {
-    use ServiceContainer;
+
 
     private $soapClient;
     private $serverManager;
 
     public function __construct(ThirdPartyIntegrationSoapClient $soapClient, ServerManager $serverManager)
     {
+        parent::__construct();
         $this->soapClient = $soapClient;
         $this->serverManager = $serverManager;
     }
@@ -40,7 +41,7 @@ class ThirdPartyIntegrationPartner implements IPartner
      */
     public function checkAndRegisterUser(int $userId, int $skinId, int $partnerId, \SoapClient $soapClient = null): void
     {
-        $query = $this->container->get('Db')->getDb(true)->prepare("SELECT poker_skinid 
+        $query = $this->container->get('Db1')->prepare("SELECT poker_skinid 
                                              FROM provider_skin_mapping 
                                              WHERE provider_id = :providerId 
                                              AND provider_skinid = :providerSkinId");
@@ -70,7 +71,7 @@ class ThirdPartyIntegrationPartner implements IPartner
         $isFirstLogin = 1;
         $returnData = [];
         if ($userDate != null) {//this whole if statement is executed only on com part
-            $query = $this->container->get('Db')->getDb(true)->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
+            $query = $this->container->get('Db1')->prepare("SELECT ud.updatetime < :userDate AS isUpdated, c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst 
                                                  FROM casino_ids c 
                                                  JOIN udata ud ON c.user_id = ud.uid 
@@ -93,7 +94,7 @@ class ThirdPartyIntegrationPartner implements IPartner
                 ];
             }
         } else {
-            $query = $this->container->get('Db')->getDb(true)->prepare("SELECT c.user_id, 
+            $query = $this->container->get('Db1')->prepare("SELECT c.user_id, 
                                                  (ud.logintime <= ud.acttime) AS isFirst,
                                                  teud.authority_id as authorityId
                                                  FROM casino_ids c 
@@ -129,7 +130,7 @@ class ThirdPartyIntegrationPartner implements IPartner
             $params['userId'] = $userId;
             $params['skinId'] = $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['partnerId'];
             if (isset($user->agentId) && $user->agentId != 0) {
-                $query = $this->container->get('Db')->getDb(true)->prepare("SELECT * 
+                $query = $this->container->get('Db1')->prepare("SELECT * 
                                                      FROM provider_affil_mapping 
                                                      WHERE provider_id = :providerId 
                                                      AND provider_affilid = :agentId");
@@ -138,13 +139,13 @@ class ThirdPartyIntegrationPartner implements IPartner
                     ':agentId'    => $user->agentId
                 ]);
                 if ($query->rowCount() != 1) {
-                    $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO affiliates (name) 
+                    $query = $this->container->get('Db1')->prepare("INSERT INTO affiliates (name) 
                                                          VALUES (:agentName)");
                     if ($query->execute([
                         ':agentName' => $user->agentName
                     ])) {
-                        $affiliateId = $this->container->get('Db')->getDb(true)->lastInsertId();
-                        $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
+                        $affiliateId = $this->container->get('Db1')->lastInsertId();
+                        $query = $this->container->get('Db1')->prepare("INSERT INTO provider_affil_mapping (provider_id, provider_affilid, poker_affilid) 
                                                              VALUES (:providerId, :agentId, :affiliateId)");
                         $query->execute([
                             ':providerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
@@ -157,7 +158,7 @@ class ThirdPartyIntegrationPartner implements IPartner
             }
             if (!$needUpdate) {
                 if (!empty($user->authorityId) && is_null($result['authorityId'])) {
-                    $query = $this->container->get('Db')->getDb(true)->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
+                    $query = $this->container->get('Db1')->prepare("INSERT INTO tp_ext_userdata (provider_id, casino_id, skin_id, authority_id) VALUES (:providerId, :userId, :partnerId, :authorityId)");
                     if ($query->execute([
                         ':providerId'  => $this->container->get('SkinConfig')->getSkinConfigs($pokerSkinId)['providerId'],
                         ':userId'      => $userId,

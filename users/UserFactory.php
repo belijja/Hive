@@ -12,9 +12,9 @@ namespace Users;
 use BackOffice\Bonus;
 use Containers\ServiceContainer;
 
-class UserFactory
+class UserFactory extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     /**
      * @param array $thirdPartyServiceUser

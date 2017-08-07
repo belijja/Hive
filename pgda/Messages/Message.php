@@ -15,9 +15,9 @@ use Pgda\Fields\PField;
 use Pgda\Fields\UField;
 use Pgda\PGDAIntegration;
 
-class Message implements \Iterator
+class Message extends ServiceContainer implements \Iterator
 {
-    use ServiceContainer;
+
 
     private $position = 0;
     private $errorMessage = [

@@ -11,9 +11,9 @@ namespace Services;
 
 use Containers\ServiceContainer;
 
-class PartnerConfigs
+class PartnerConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+    public $x = 0;
 
     private $partnerConfigs = [
         'pw'         => [
@@ -36,6 +36,8 @@ class PartnerConfigs
 
     public function getPartnerConfigs($partnerName)
     {
+        error_log("Number " . $this->x);
+        $this->x++;
         return $this->container->get('Config')->checkIfArrayExists((string)$partnerName, $this->partnerConfigs);
     }
 }

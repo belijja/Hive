@@ -11,9 +11,9 @@ namespace Helpers\ServerHelpers;
 
 use Containers\ServiceContainer;
 
-class ServerManager
+class ServerManager extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $postParamsMaxLengths = [
 

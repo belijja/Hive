@@ -11,9 +11,9 @@ namespace Helpers\SoapHelpers;
 
 use Containers\ServiceContainer;
 
-class NetentSoapClient
+class NetentSoapClient extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     /**
      * @param array $user

@@ -15,9 +15,9 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Formatter\LineFormatter;
 use Containers\ServiceContainer;
 
-class LogManager
+class LogManager extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     /**
      * @param string $logLevel

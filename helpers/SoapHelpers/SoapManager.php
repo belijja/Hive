@@ -16,10 +16,8 @@ use Models\ServiceModels\IServiceModels;
  * Class SoapManager
  * @package Helpers\SoapHelpers
  */
-class SoapManager
+class SoapManager extends ServiceContainer
 {
-
-    use ServiceContainer;
 
     /**
      * @param IServiceModels $modelObject

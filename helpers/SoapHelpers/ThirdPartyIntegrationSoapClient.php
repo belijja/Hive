@@ -11,9 +11,8 @@ namespace Helpers\SoapHelpers;
 
 use Containers\ServiceContainer;
 
-class ThirdPartyIntegrationSoapClient implements ISoapClient
+class ThirdPartyIntegrationSoapClient extends ServiceContainer implements ISoapClient
 {
-    use ServiceContainer;
 
     /**
      * @param int $userId

@@ -11,13 +11,16 @@ namespace BackOffice;
 
 use Containers\ServiceContainer;
 
-class Core
+class Core extends ServiceContainer
 {
-    use ServiceContainer;
-
+    /**
+     * @param int $gameId
+     * @return array
+     * @throws \SoapFault
+     */
     public function getGameShortData(int $gameId): array
     {
-        $query = $this->container->get('Db')->getDb(false)->prepare("
+        $query = $this->container->get('Db2')->prepare("
                 SELECT 
 				pro.provider_id,
 				game.aams_game_id_desktop,

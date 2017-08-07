@@ -38,8 +38,9 @@ class Message400 extends Message
      * Message400 constructor.
      * @param $messageId
      */
-    private function __construct($messageId)
+    public function __construct($messageId)
     {
+        parent::__construct();
         $this->messageId = $messageId;
     }
 

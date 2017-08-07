@@ -11,9 +11,9 @@ namespace Services;
 
 use Containers\ServiceContainer;
 
-class GameProviderConfigs
+class GameProviderConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $gameProviderConfigs = [
         'tpg'         => [

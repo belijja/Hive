@@ -11,9 +11,9 @@ namespace Services;
 
 use Containers\ServiceContainer;
 
-class SKSConfigs
+class SKSConfigs extends ServiceContainer
 {
-    use ServiceContainer;
+
 
     private $countryCodes = [
         '1'   => [
